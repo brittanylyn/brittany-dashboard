@@ -536,7 +536,7 @@ function render(data) {
   const activeHabits = habits.filter(h => h.active);
 
   // Low/order-soon inventory
-  const lowStock = inventory.filter(i => i.status==='Low' || i.status==='Order Soon');
+  const lowStock = inventory.filter(i => i.status==='🔴 Low' || i.status==='🟡 Order Soon');
 
   // Bills
   const bills = finance.filter(f => f.type==='Bill' || f.type==='Subscription');
@@ -601,7 +601,7 @@ function render(data) {
                 <div class="alert-item-name">${i.item}</div>
                 ${i.category?`<div class="alert-cat">${i.category}</div>`:''}
               </div>
-              <span class="tag ${i.status==='Low'?'tag-low-inv':'tag-order'}">${i.status}</span>
+              <span class="tag ${i.status==='🔴 Low'?'tag-low-inv':'tag-order'}">${i.status.replace('🔴 ','').replace('🟡 ','')}</span>
             </div>`).join('')
         }
       </div>
