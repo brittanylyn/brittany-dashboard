@@ -2,18 +2,18 @@ const https = require('https');
 
 const NOTION_VERSION = '2022-06-28';
 
-// ── Notion Database IDs ─────────────────────────────────────
 const DB = {
   tasks:     'b43aa2cb03a94351b50e0c2e5e6ef998',
   habits:    'b67bc49098e74cabae1b88646b5abfbe',
   inventory: 'db5157429e0a41db834870127a58c949',
   finance:   '4bff6adfd43a4fda980be59f20d3bf15',
+  wishlist:  '2ff525e0f783441db1d1009a139a678d',
+  timetrack: '73e595478c19447cb2c8e7ad1cf210a2',
 };
 
-// ── Notion API helper ───────────────────────────────────────
-function queryDB(dbId, token, filter = {}) {
+function queryDB(dbId, token) {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify(Object.keys(filter).length ? filter : {});
+    const body = JSON.stringify({});
     const options = {
       hostname: 'api.notion.com',
       path: `/v1/databases/${dbId}/query`,
@@ -39,14 +39,14 @@ function queryDB(dbId, token, filter = {}) {
   });
 }
 
-// ── Property extractors ─────────────────────────────────────
 const txt  = p => p?.title?.[0]?.plain_text || p?.rich_text?.[0]?.plain_text || '';
 const sel  = p => p?.select?.name || null;
 const num  = p => p?.number ?? null;
 const date = p => p?.date?.start || null;
 const chk  = p => p?.checkbox ?? false;
+const url  = p => p?.url || null;
+const frm  = p => p?.formula?.number ?? p?.formula?.string ?? null;
 
-// ── Main handler ────────────────────────────────────────────
 module.exports = async (req, res) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
@@ -58,24 +58,31 @@ module.exports = async (req, res) => {
   if (!token) return res.status(500).json({ error: 'NOTION_TOKEN not set' });
 
   try {
-    const [tasksRes, habitsRes, invRes, finRes] = await Promise.all([
+    const [tasksRes, habitsRes, invRes, finRes, wishRes, timeRes] = await Promise.all([
       queryDB(DB.tasks,     token),
       queryDB(DB.habits,    token),
       queryDB(DB.inventory, token),
       queryDB(DB.finance,   token),
+      queryDB(DB.wishlist,  token),
+      queryDB(DB.timetrack, token),
     ]);
 
     const tasks = (tasksRes.results || []).map(p => ({
-      id:          p.id,
-      task:        txt(p.properties['Task']),
-      ecosystem:   sel(p.properties['Ecosystem']),
-      status:      sel(p.properties['Status']),
-      assignee:    sel(p.properties['Assignee']),
-      priority:    sel(p.properties['Priority']),
-      frequency:   sel(p.properties['Frequency']),
-      timeEst:     num(p.properties['Time Estimate (mins)']),
-      dueDate:     date(p.properties['Due Date']),
-      notes:       txt(p.properties['Notes']),
+      id:            p.id,
+      task:          txt(p.properties['Task']),
+      ecosystem:     sel(p.properties['Ecosystem']),
+      status:        sel(p.properties['Status']),
+      assignee:      sel(p.properties['Assignee']),
+      priority:      sel(p.properties['Priority']),
+      frequency:     sel(p.properties['Frequency']),
+      timeEst:       num(p.properties['Time Estimate (mins)']),
+      dueDate:       date(p.properties['Due Date']),
+      intendedDate:  date(p.properties['Intended Date']),
+      completedDate: date(p.properties['Completed Date']),
+      energyLevel:   sel(p.properties['Energy Level']),
+      week:          sel(p.properties['Week']),
+      blocked:       chk(p.properties['Blocked']),
+      notes:         txt(p.properties['Notes']),
     }));
 
     const habits = (habitsRes.results || []).map(p => ({
@@ -97,17 +104,42 @@ module.exports = async (req, res) => {
     }));
 
     const finance = (finRes.results || []).map(p => ({
-      id:       p.id,
-      name:     txt(p.properties['Name']),
-      type:     sel(p.properties['Type']),
-      amount:   num(p.properties['Amount']),
-      target:   num(p.properties['Target Amount']),
-      ecosystem:sel(p.properties['Ecosystem']),
-      status:   sel(p.properties['Status']),
-      frequency:sel(p.properties['Frequency']),
+      id:        p.id,
+      name:      txt(p.properties['Name']),
+      type:      sel(p.properties['Type']),
+      amount:    num(p.properties['Amount']),
+      target:    num(p.properties['Target Amount']),
+      ecosystem: sel(p.properties['Ecosystem']),
+      status:    sel(p.properties['Status']),
+      frequency: sel(p.properties['Frequency']),
     }));
 
-    res.json({ tasks, habits, inventory, finance, ts: new Date().toISOString() });
+    const wishlist = (wishRes.results || []).map(p => ({
+      id:       p.id,
+      item:     txt(p.properties['Item']),
+      store:    txt(p.properties['Store']),
+      cost:     num(p.properties['Cost']),
+      category: sel(p.properties['Category']),
+      priority: sel(p.properties['Priority']),
+      status:   sel(p.properties['Status']),
+      link:     url(p.properties['Link']),
+    }));
+
+    const timetrack = (timeRes.results || []).map(p => ({
+      id:            p.id,
+      project:       txt(p.properties['Project']),
+      client:        sel(p.properties['Client']),
+      date:          date(p.properties['Date']),
+      startTime:     txt(p.properties['Start Time']),
+      endTime:       txt(p.properties['End Time']),
+      hoursWorked:   num(p.properties['Hours Worked']),
+      rate:          num(p.properties['Rate']),
+      totalAmount:   frm(p.properties['Total Amount']),
+      invoiceStatus: sel(p.properties['Invoice Status']),
+      notes:         txt(p.properties['Notes']),
+    }));
+
+    res.json({ tasks, habits, inventory, finance, wishlist, timetrack, ts: new Date().toISOString() });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

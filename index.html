@@ -4,493 +4,761 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Brittany's Dashboard</title>
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,400;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-:root {
-  --bg: #EEF0F8;
-  --card: #FFFFFF;
-  --text: #111827;
-  --muted: #6B7280;
-  --border: #E5E7EB;
-  --radius: 12px;
-  --shadow: 0 1px 4px rgba(0,0,0,0.07);
-}
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
 
-/* Header */
-.header { background: linear-gradient(135deg, #1a1a2e 0%, #16213e 55%, #0f3460 100%); padding: 14px 24px; display: flex; justify-content: space-between; align-items: center; }
-.header h1 { color: white; font-size: 20px; font-weight: 800; letter-spacing: -0.3px; }
-.header-date { color: rgba(255,255,255,0.55); font-size: 12px; margin-top: 2px; }
+:root {
+  --cream:  #ffefdd;
+  --green:  #043000;
+  --pink:   #f094a3;
+  --gold:   #efb001;
+  --coral:  #e24d49;
+  --white:  #ffffff;
+  --green2: rgba(4,48,0,0.08);
+  --green3: rgba(4,48,0,0.15);
+}
 
-/* Layout */
-.content { padding: 16px 24px; display: flex; flex-direction: column; gap: 14px; }
-.row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.row3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
-.row4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+body {
+  background: var(--cream);
+  font-family: 'DM Sans', sans-serif;
+  color: var(--green);
+  padding: 28px 24px 48px;
+  min-width: 900px;
+}
 
-/* KPI */
-.kpi { background: var(--card); border-radius: var(--radius); padding: 16px 18px; box-shadow: var(--shadow); border-left: 4px solid; }
-.kpi.blue   { border-color: #3B82F6; }
-.kpi.purple { border-color: #8B5CF6; }
-.kpi.green  { border-color: #10B981; }
-.kpi.red    { border-color: #EF4444; }
-.kpi.pink   { border-color: #EC4899; }
-.kpi-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
-.kpi-value { font-size: 28px; font-weight: 800; line-height: 1.1; margin: 4px 0 2px; }
-.kpi-sub   { font-size: 11px; color: var(--muted); }
+/* ── HEADER ─────────────────────────────────────── */
+.dashboard-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 2rem;
+  font-weight: 900;
+  color: var(--coral);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
 
-/* Cards */
-.card { background: var(--card); border-radius: var(--radius); padding: 18px 20px; box-shadow: var(--shadow); }
-.card-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-.card-title { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.6px; color: var(--muted); }
-.chip { font-size: 11px; background: #F3F4F6; color: var(--muted); padding: 2px 9px; border-radius: 9px; font-weight: 500; }
+.dashboard-date {
+  text-align: center;
+  font-size: 0.82rem;
+  color: var(--green);
+  opacity: 0.5;
+  margin-bottom: 28px;
+  font-style: italic;
+}
 
-/* Chart */
-.chart-wrap { display: flex; align-items: center; gap: 16px; }
-.chart-box  { width: 160px; height: 160px; flex-shrink: 0; }
-.legend     { flex: 1; }
-.leg-item   { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
-.leg-dot    { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
-.leg-lbl    { font-size: 12px; color: #374151; flex: 1; }
-.leg-pct    { font-size: 12px; font-weight: 700; }
+/* ── SECTION HEADERS ─────────────────────────────── */
+.section-header {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.25rem;
+  font-weight: 900;
+  color: var(--coral);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 32px 0 14px;
+}
 
-/* Tasks */
-.task-row { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+.section-header em {
+  font-weight: 400;
+  font-size: 1rem;
+  letter-spacing: 0.04em;
+}
+
+/* ── ROW 1: THREE GREEN CARDS ────────────────────── */
+.row-three {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.green-card {
+  background: var(--green);
+  border-radius: 14px;
+  padding: 20px;
+  min-height: 240px;
+}
+
+.card-label {
+  font-family: 'Playfair Display', serif;
+  font-style: italic;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: var(--gold);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: 14px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(239,176,1,0.25);
+}
+
+/* Tasks in green card */
+.task-row {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
 .task-row:last-child { border-bottom: none; }
-.task-name { font-size: 13px; font-weight: 600; line-height: 1.3; }
-.task-meta { display: flex; gap: 5px; margin-top: 3px; flex-wrap: wrap; align-items: center; }
-.task-proj { font-size: 11px; font-weight: 600; }
-.task-dur  { font-size: 11px; color: var(--muted); }
-.badge     { font-size: 10px; font-weight: 700; padding: 1px 7px; border-radius: 8px; }
-.b-Me       { background: #DBEAFE; color: #1D4ED8; }
-.b-Claude   { background: #FCE7F3; color: #BE185D; }
-.b-External { background: #EDE9FE; color: #6D28D9; }
-.b-UsTogether { background: #D1FAE5; color: #059669; }
-.b-urgent   { background: #FEE2E2; color: #DC2626; }
 
-/* Progress bars */
-.proj-row  { margin-bottom: 13px; }
-.proj-row:last-child { margin-bottom: 0; }
-.proj-top  { display: flex; justify-content: space-between; margin-bottom: 5px; }
-.proj-name { font-size: 13px; font-weight: 600; }
-.proj-pct  { font-size: 12px; font-weight: 700; }
-.bar-bg    { height: 7px; background: #F3F4F6; border-radius: 4px; overflow: hidden; }
-.bar-fill  { height: 100%; border-radius: 4px; transition: width 1.2s ease; }
+.task-name {
+  color: var(--white);
+  font-size: 0.83rem;
+  font-weight: 500;
+  line-height: 1.4;
+  margin-bottom: 4px;
+}
 
-/* Inventory */
-.inv-row   { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--border); }
-.inv-row:last-child { border-bottom: none; }
-.inv-name  { font-size: 13px; font-weight: 500; }
-.inv-cat   { font-size: 11px; color: var(--muted); }
-.s-badge   { font-size: 10px; font-weight: 700; padding: 3px 9px; border-radius: 8px; }
-.s-Low     { background: #FEE2E2; color: #DC2626; }
-.s-Out     { background: #FEE2E2; color: #991B1B; }
-.s-Order   { background: #FEF3C7; color: #B45309; }
-.s-OK      { background: #D1FAE5; color: #059669; }
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.tag-urgent  { background: var(--coral);  color: white; }
+.tag-high    { background: #e07a30;       color: white; }
+.tag-medium  { background: var(--gold);   color: var(--green); }
+.tag-low     { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.7); }
+.tag-eco     { background: rgba(239,176,1,0.18); color: var(--gold); }
+.tag-time    { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.55); }
+.tag-blocked { background: var(--coral); color: white; }
+.tag-energy-high   { background: rgba(226,77,73,0.3); color: var(--coral); }
+.tag-energy-medium { background: rgba(239,176,1,0.3); color: var(--gold); }
+.tag-energy-low    { background: rgba(255,255,255,0.15); color: rgba(255,255,255,0.6); }
 
 /* Habits */
-.habit-row    { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); }
-.habit-row:last-child { border-bottom: none; }
-.habit-circle { width: 22px; height: 22px; border-radius: 50%; border: 2px solid #D1D5DB; flex-shrink: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.15s; }
-.habit-circle.done { background: #10B981; border-color: #10B981; }
-.habit-circle.done::after { content: '✓'; color: white; font-size: 12px; font-weight: 700; }
-.habit-info   { flex: 1; }
-.habit-name   { font-size: 13px; font-weight: 500; }
-.habit-freq   { font-size: 11px; color: var(--muted); }
-.hcat  { font-size: 10px; padding: 2px 7px; border-radius: 7px; font-weight: 600; }
-.hc-Health    { background: #D1FAE5; color: #059669; }
-.hc-Nutrition { background: #CCFBF1; color: #0F766E; }
-.hc-Fitness   { background: #FED7AA; color: #C2410C; }
-.hc-Mental    { background: #EDE9FE; color: #6D28D9; }
-.hc-Spiritual { background: #DBEAFE; color: #1D4ED8; }
-.hc-Home      { background: #F3F4F6; color: #374151; }
+.habit-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.habit-row:last-of-type { border-bottom: none; }
 
-/* Finance */
-.fin-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin: 10px 0 6px; }
-.fin-label:first-child { margin-top: 0; }
-.fin-row   { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid var(--border); }
-.fin-row:last-child { border-bottom: none; }
-.fin-name  { font-size: 13px; font-weight: 500; }
-.fin-amt   { font-size: 13px; font-weight: 700; }
-.goal-item { padding: 8px 0; border-bottom: 1px solid var(--border); }
-.goal-row  { display: flex; justify-content: space-between; margin-bottom: 5px; }
-.goal-name { font-size: 13px; font-weight: 600; }
-.goal-nums { font-size: 12px; color: var(--muted); }
+.habit-dot {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--gold);
+  flex-shrink: 0;
+}
 
-/* Spinner */
-.loading { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 24px; color: var(--muted); font-size: 12px; }
-.spin { width: 16px; height: 16px; border: 2px solid #E5E7EB; border-top-color: #3B82F6; border-radius: 50%; animation: spin 0.7s linear infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.empty { color: var(--muted); font-size: 12px; text-align: center; padding: 16px; }
+.habit-name {
+  flex: 1;
+  color: var(--white);
+  font-size: 0.82rem;
+}
+
+.habit-cat {
+  font-size: 0.6rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: rgba(239,176,1,0.18);
+  color: var(--gold);
+}
+
+.habit-score {
+  color: var(--gold);
+  font-size: 0.75rem;
+  text-align: center;
+  margin-top: 12px;
+  font-weight: 600;
+}
+
+/* Inventory alerts */
+.alert-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.alert-row:last-child { border-bottom: none; }
+
+.alert-info { flex: 1; }
+.alert-item-name { color: var(--white); font-size: 0.83rem; font-weight: 500; }
+.alert-cat { color: rgba(255,255,255,0.45); font-size: 0.68rem; margin-top: 1px; }
+.tag-low-inv { background: var(--coral); color: white; }
+.tag-order   { background: var(--gold);  color: var(--green); }
+
+/* Empty states */
+.empty-light {
+  color: rgba(255,255,255,0.3);
+  font-size: 0.78rem;
+  font-style: italic;
+  text-align: center;
+  padding: 30px 0 10px;
+}
+
+.empty-dark {
+  color: rgba(4,48,0,0.3);
+  font-size: 0.78rem;
+  font-style: italic;
+  text-align: center;
+  padding: 20px 0 10px;
+}
+
+/* ── WEEK STRIP ──────────────────────────────────── */
+.week-strip {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 10px;
+}
+
+.day-card {
+  background: var(--pink);
+  border-radius: 12px;
+  padding: 12px 8px 14px;
+  min-height: 130px;
+}
+
+.day-card.today {
+  background: var(--gold);
+  box-shadow: 0 4px 16px rgba(239,176,1,0.35);
+}
+
+.day-letter {
+  font-family: 'Playfair Display', serif;
+  font-weight: 900;
+  font-size: 1.2rem;
+  color: var(--green);
+  text-align: center;
+}
+
+.day-num {
+  font-size: 0.6rem;
+  color: rgba(4,48,0,0.55);
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.day-task-chip {
+  font-size: 0.6rem;
+  color: var(--green);
+  background: rgba(4,48,0,0.1);
+  border-radius: 4px;
+  padding: 2px 5px;
+  margin-bottom: 3px;
+  line-height: 1.4;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.day-more {
+  font-size: 0.58rem;
+  color: rgba(4,48,0,0.5);
+  text-align: center;
+  margin-top: 4px;
+}
+
+.day-open {
+  font-size: 0.62rem;
+  color: rgba(4,48,0,0.35);
+  text-align: center;
+  font-style: italic;
+  margin-top: 14px;
+}
+
+/* ── ECOSYSTEM REVIEW ────────────────────────────── */
+.eco-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 12px;
+}
+
+.eco-card {
+  text-align: center;
+}
+
+.eco-name {
+  font-size: 0.65rem;
+  font-weight: 700;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 6px;
+  line-height: 1.3;
+  min-height: 24px;
+}
+
+.eco-chart-wrap {
+  position: relative;
+  width: 100%;
+  padding-bottom: 100%;
+}
+
+.eco-chart-wrap canvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+.eco-legend {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eco-leg-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.58rem;
+  color: var(--green);
+  opacity: 0.7;
+}
+
+.eco-leg-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── PROVISION PLANNING ──────────────────────────── */
+.provision-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 16px;
+}
+
+.provision-card {
+  background: var(--white);
+  border: 2px solid rgba(4,48,0,0.12);
+  border-radius: 14px;
+  padding: 18px 16px;
+  min-height: 200px;
+}
+
+.provision-card.gold {
+  background: var(--gold);
+  border-color: var(--gold);
+}
+
+.provision-title {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: var(--green);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  text-align: center;
+  margin-bottom: 14px;
+  line-height: 1.4;
+}
+
+/* Bills */
+.bill-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 0;
+  border-bottom: 1px solid var(--green3);
+  font-size: 0.78rem;
+}
+.bill-row:last-child { border-bottom: none; }
+.bill-name { color: var(--green); font-weight: 500; }
+.bill-amt  { color: var(--coral); font-weight: 700; }
+
+/* Budget bars */
+.budget-row { margin-bottom: 10px; }
+.budget-lbl {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: var(--green);
+  margin-bottom: 4px;
+}
+.bar-bg {
+  height: 7px;
+  background: var(--green2);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.8s ease;
+}
+
+/* Wish list */
+.wish-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(4,48,0,0.12);
+  font-size: 0.78rem;
+}
+.wish-row:last-child { border-bottom: none; }
+.wish-name { color: var(--green); font-weight: 500; flex: 1; }
+.wish-store { font-size: 0.62rem; color: rgba(4,48,0,0.5); }
+.wish-cost { color: var(--green); font-weight: 700; margin-left: 8px; }
+
+/* Time tracker */
+.time-row {
+  padding: 7px 0;
+  border-bottom: 1px solid rgba(4,48,0,0.12);
+  font-size: 0.75rem;
+}
+.time-row:last-of-type { border-bottom: none; }
+.time-project { font-weight: 600; color: var(--green); }
+.time-meta { color: rgba(4,48,0,0.55); font-size: 0.65rem; margin-top: 2px; }
+.time-total {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 2px solid var(--green);
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--green);
+}
+
+/* ── LOADING ─────────────────────────────────────── */
+.loading {
+  text-align: center;
+  padding: 80px 40px;
+  color: var(--coral);
+  font-family: 'Playfair Display', serif;
+  font-size: 1.1rem;
+  font-style: italic;
+}
 </style>
 </head>
 <body>
-
-<div class="header">
-  <div>
-    <h1>✨ Brittany's Dashboard</h1>
-    <div class="header-date" id="hdrDate"></div>
-  </div>
-</div>
-
-<div class="content">
-
-  <!-- KPI ROW -->
-  <div class="row4">
-    <div class="kpi blue">
-      <div class="kpi-label">Active Tasks</div>
-      <div class="kpi-value" id="kpiTasks">—</div>
-      <div class="kpi-sub" id="kpiTasksSub">Loading…</div>
-    </div>
-    <div class="kpi purple">
-      <div class="kpi-label">Hours in Queue</div>
-      <div class="kpi-value" id="kpiHours">—</div>
-      <div class="kpi-sub">Estimated across tasks</div>
-    </div>
-    <div class="kpi green">
-      <div class="kpi-label">Parker Wells Target</div>
-      <div class="kpi-value">$3k</div>
-      <div class="kpi-sub">Monthly goal</div>
-    </div>
-    <div class="kpi red">
-      <div class="kpi-label">Low Stock Items</div>
-      <div class="kpi-value" id="kpiStock">—</div>
-      <div class="kpi-sub">Need attention</div>
-    </div>
-  </div>
-
-  <!-- CHART + URGENT TASKS -->
-  <div class="row2">
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">⏱ Time by Ecosystem</div>
-        <div class="chip" id="totalHrs">—</div>
-      </div>
-      <div class="chart-wrap">
-        <div class="chart-box"><canvas id="ecoChart"></canvas></div>
-        <div class="legend" id="ecoLegend"><div class="loading"><div class="spin"></div></div></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">🔴 Urgent & High Priority</div>
-        <div class="chip" id="urgentCount">—</div>
-      </div>
-      <div id="urgentList"><div class="loading"><div class="spin"></div></div></div>
-    </div>
-  </div>
-
-  <!-- ASSIGNEE CHART + TASKS BY ECOSYSTEM -->
-  <div class="row2">
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">👤 Tasks by Assignee</div>
-        <div class="chip" id="assigneeTotal">—</div>
-      </div>
-      <div class="chart-wrap">
-        <div class="chart-box"><canvas id="assigneeChart"></canvas></div>
-        <div class="legend" id="assigneeLegend"><div class="loading"><div class="spin"></div></div></div>
-      </div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">🚀 Progress by Ecosystem</div>
-      </div>
-      <div id="projList"><div class="loading"><div class="spin"></div></div></div>
-    </div>
-  </div>
-
-  <!-- HABITS + INVENTORY + FINANCE -->
-  <div class="row3">
-
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">💪 Daily Habits</div>
-        <div class="chip" id="habitChip">—</div>
-      </div>
-      <div id="habitList"><div class="loading"><div class="spin"></div></div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">🏠 Inventory Alerts</div>
-        <div class="chip" id="invChip">—</div>
-      </div>
-      <div id="invList"><div class="loading"><div class="spin"></div></div></div>
-    </div>
-
-    <div class="card">
-      <div class="card-head">
-        <div class="card-title">💰 Finance</div>
-      </div>
-      <div id="finList"><div class="loading"><div class="spin"></div></div></div>
-    </div>
-
-  </div>
-
-</div>
+<div id="app"><div class="loading">Loading your command center...</div></div>
 
 <script>
-// ── Config ──────────────────────────────────────────────────
-const COLORS = {
-  'GOTR':         '#3B82F6',
-  'Maroon':       '#8B5CF6',
-  'Mellow Yellow':'#F59E0B',
-  'APC':          '#10B981',
-  'Parker Wells': '#1D4ED8',
-  'Job Search':   '#EF4444',
-  'Personal':     '#EC4899',
-  'Admin':        '#6B7280',
-};
-function pc(name) { return COLORS[name] || '#6B7280'; }
+const ECOSYSTEMS = ['GOTR','Maroon','Mellow Yellow','APC','Parker Wells','Job Search','Personal'];
+const DAYS = ['S','M','T','W','Th','F','S'];
+const ecoCharts = {};
 
-function fmtMins(m) {
-  if (!m) return '0m';
-  const h = Math.floor(m/60), min = m%60;
-  return h > 0 ? (min > 0 ? `${h}h ${min}m` : `${h}h`) : `${min}m`;
+function today() { return new Date(); }
+function todayStr() { return today().toISOString().split('T')[0]; }
+
+function sameDay(a, b) {
+  return a.getFullYear()===b.getFullYear() && a.getMonth()===b.getMonth() && a.getDate()===b.getDate();
 }
-function fmtMoney(n) {
-  if (!n && n !== 0) return '—';
-  return '$' + Number(n).toLocaleString('en-US', {minimumFractionDigits:0});
+
+function getWeek() {
+  const t = today();
+  const sun = new Date(t); sun.setDate(t.getDate() - t.getDay());
+  return Array.from({length:7}, (_,i) => { const d=new Date(sun); d.setDate(sun.getDate()+i); return d; });
 }
-function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
-// ── Set date ────────────────────────────────────────────────
-const now = new Date();
-document.getElementById('hdrDate').textContent =
-  now.toLocaleDateString('en-US', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+function fmt$(n) {
+  if (n == null) return '—';
+  return '$'+n.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+}
 
-// ── Chart factory ───────────────────────────────────────────
-let charts = {};
-function makeDonut(id, labels, values, colors) {
-  if (charts[id]) charts[id].destroy();
-  const ctx = document.getElementById(id).getContext('2d');
-  charts[id] = new Chart(ctx, {
+function priorityTag(p) {
+  if (!p) return '';
+  const label = p.replace('🔴 ','');
+  const cls = p.includes('Urgent')?'urgent':p==='High'?'high':p==='Medium'?'medium':'low';
+  return `<span class="tag tag-${cls}">${label}</span>`;
+}
+
+function energyTag(e) {
+  if (!e) return '';
+  return `<span class="tag tag-energy-${e.toLowerCase()}">${e} energy</span>`;
+}
+
+function fmtDate(d) {
+  return d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'});
+}
+
+function renderEcoChart(id, done, inProg, todo) {
+  const canvas = document.getElementById(id);
+  if (!canvas) return;
+  if (ecoCharts[id]) ecoCharts[id].destroy();
+  const total = done + inProg + todo;
+  ecoCharts[id] = new Chart(canvas, {
     type: 'doughnut',
-    data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 2, borderColor: '#fff', hoverBorderWidth: 3 }] },
-    options: { responsive: true, maintainAspectRatio: true, cutout: '65%',
-      plugins: { legend: { display: false }, tooltip: { callbacks: { label: c => ' ' + fmtMins(c.raw) } } } }
+    data: {
+      labels: ['Done','In Progress','To Do'],
+      datasets: [{
+        data: total===0 ? [1,0,0] : [done, inProg, todo],
+        backgroundColor: total===0
+          ? ['rgba(4,48,0,0.08)','transparent','transparent']
+          : ['#043000','#efb001','#f094a3'],
+        borderWidth: 0,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: '58%',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => {
+              const val = ctx.raw;
+              const pct = total ? Math.round(val/total*100) : 0;
+              return ` ${val} (${pct}%)`;
+            }
+          }
+        }
+      }
+    }
   });
 }
 
-// ── Render functions ────────────────────────────────────────
+function render(data) {
+  const { tasks, habits, inventory, finance, wishlist, timetrack } = data;
+  const now = today();
+  const ts = todayStr();
+  const week = getWeek();
 
-function renderEcoChart(tasks) {
-  const byEco = {};
-  tasks.forEach(t => {
-    if (!t.timeEst) return;
-    byEco[t.ecosystem] = (byEco[t.ecosystem]||0) + t.timeEst;
+  // Today's tasks (intended date = today, not done)
+  const plateTasks = tasks.filter(t =>
+    t.intendedDate && t.intendedDate.startsWith(ts) && t.status !== 'Done'
+  );
+
+  // Active habits
+  const activeHabits = habits.filter(h => h.active);
+
+  // Low/order-soon inventory
+  const lowStock = inventory.filter(i => i.status==='Low' || i.status==='Order Soon');
+
+  // Bills
+  const bills = finance.filter(f => f.type==='Bill' || f.type==='Subscription');
+
+  // This month time tracker
+  const thisMonth = (timetrack||[]).filter(t => {
+    if (!t.date) return false;
+    const d = new Date(t.date);
+    return d.getMonth()===now.getMonth() && d.getFullYear()===now.getFullYear();
   });
-  const names = Object.keys(byEco).sort((a,b) => byEco[b]-byEco[a]);
-  const vals  = names.map(n => byEco[n]);
-  const cols  = names.map(n => pc(n));
-  const total = vals.reduce((a,b)=>a+b,0);
+  const totalEarned = thisMonth.reduce((s,t) => s+(t.totalAmount||0), 0);
 
-  document.getElementById('totalHrs').textContent = fmtMins(total) + ' total';
-  makeDonut('ecoChart', names, vals, cols);
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <h1 class="dashboard-title">The Whole Thing: My Current State of Affairs</h1>
+    <p class="dashboard-date">${fmtDate(now)}</p>
 
-  document.getElementById('ecoLegend').innerHTML = names.map((n,i) => {
-    const pct = total > 0 ? Math.round(vals[i]/total*100) : 0;
-    return `<div class="leg-item">
-      <div class="leg-dot" style="background:${cols[i]}"></div>
-      <div class="leg-lbl">${esc(n)}</div>
-      <div class="leg-pct" style="color:${cols[i]}">${pct}%</div>
-    </div>`;
-  }).join('');
-}
+    <!-- ── ROW 1 ───────────────────────────────────── -->
+    <div class="row-three">
 
-function renderAssigneeChart(tasks) {
-  const by = {};
-  tasks.forEach(t => { if (t.assignee) by[t.assignee] = (by[t.assignee]||0) + (t.timeEst||0); });
-  const ACOLS = { 'Me':'#3B82F6', 'Claude':'#EC4899', 'External':'#8B5CF6', 'Us Together':'#10B981' };
-  const names = ['Me','Claude','External','Us Together'].filter(n => by[n]);
-  const vals  = names.map(n => by[n]);
-  const cols  = names.map(n => ACOLS[n]||'#6B7280');
-  const total = vals.reduce((a,b)=>a+b,0);
-
-  document.getElementById('assigneeTotal').textContent = tasks.length + ' tasks';
-  makeDonut('assigneeChart', names, vals, cols);
-
-  document.getElementById('assigneeLegend').innerHTML = names.map((n,i) => {
-    const count = tasks.filter(t => t.assignee === n).length;
-    const pct   = total > 0 ? Math.round(vals[i]/total*100) : 0;
-    return `<div class="leg-item">
-      <div class="leg-dot" style="background:${cols[i]}"></div>
-      <div class="leg-lbl">${esc(n)} <span style="color:#9CA3AF;font-size:10px">(${count})</span></div>
-      <div class="leg-pct" style="color:${cols[i]}">${pct}%</div>
-    </div>`;
-  }).join('');
-}
-
-function renderUrgent(tasks) {
-  const urgent = tasks
-    .filter(t => (t.priority === '🔴 Urgent' || t.priority === 'High') && t.status !== 'Done')
-    .slice(0, 7);
-
-  document.getElementById('urgentCount').textContent = urgent.length + ' items';
-
-  if (!urgent.length) {
-    document.getElementById('urgentList').innerHTML = '<div class="empty">All clear! No urgent tasks.</div>';
-    return;
-  }
-
-  document.getElementById('urgentList').innerHTML = urgent.map(t => {
-    const isUrgent = t.priority === '🔴 Urgent';
-    const bKey = (t.assignee||'').replace(/\s+/g,'');
-    return `<div class="task-row">
-      <div style="flex:1">
-        <div class="task-name" style="${isUrgent ? 'color:#DC2626' : ''}">${esc(t.task)}</div>
-        <div class="task-meta">
-          ${t.ecosystem ? `<span class="task-proj" style="color:${pc(t.ecosystem)}">${esc(t.ecosystem)}</span>` : ''}
-          ${t.timeEst ? `<span class="task-dur">· ${fmtMins(t.timeEst)}</span>` : ''}
-          ${isUrgent ? `<span class="badge b-urgent">URGENT</span>` : ''}
-          ${t.assignee ? `<span class="badge b-${bKey}">${esc(t.assignee)}</span>` : ''}
-        </div>
+      <!-- What's on My Plate Today -->
+      <div class="green-card">
+        <div class="card-label">🍽️ What's on My Plate Today?</div>
+        ${plateTasks.length===0
+          ? `<div class="empty-light">Your plate is clear today ✨</div>`
+          : plateTasks.map(t => `
+            <div class="task-row">
+              <div class="task-name">${t.task}${t.blocked?' 🚫':''}</div>
+              <div class="tags">
+                ${priorityTag(t.priority)}
+                ${t.ecosystem?`<span class="tag tag-eco">${t.ecosystem}</span>`:''}
+                ${t.timeEst?`<span class="tag tag-time">${t.timeEst}m</span>`:''}
+                ${energyTag(t.energyLevel)}
+              </div>
+            </div>`).join('')
+        }
       </div>
-    </div>`;
-  }).join('');
-}
 
-function renderKPIs(tasks) {
-  const active = tasks.filter(t => t.status !== 'Done');
-  const done   = tasks.filter(t => t.status === 'Done');
-  const totalMins = active.reduce((a,t) => a + (t.timeEst||0), 0);
-
-  document.getElementById('kpiTasks').textContent   = active.length;
-  document.getElementById('kpiTasksSub').textContent = done.length + ' done';
-  document.getElementById('kpiHours').textContent   = fmtMins(totalMins);
-}
-
-function renderProjects(tasks) {
-  const ecos = [...new Set(tasks.map(t => t.ecosystem).filter(Boolean))];
-  const el = document.getElementById('projList');
-
-  el.innerHTML = ecos.map(eco => {
-    const ecoTasks = tasks.filter(t => t.ecosystem === eco);
-    const done = ecoTasks.filter(t => t.status === 'Done').length;
-    const total = ecoTasks.length;
-    const pct = total > 0 ? Math.round(done/total*100) : 0;
-    const clr = pc(eco);
-    return `<div class="proj-row">
-      <div class="proj-top">
-        <div>
-          <div class="proj-name"><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${clr};margin-right:6px"></span>${esc(eco)}</div>
-        </div>
-        <div class="proj-pct" style="color:${clr}">${pct}% <span style="color:#9CA3AF;font-weight:400;font-size:10px">(${done}/${total})</span></div>
+      <!-- Becoming: My Daily Habits -->
+      <div class="green-card">
+        <div class="card-label">🌱 Becoming: My Daily Habits</div>
+        ${activeHabits.length===0
+          ? `<div class="empty-light">No active habits yet</div>`
+          : activeHabits.map(h => `
+            <div class="habit-row">
+              <div class="habit-dot"></div>
+              <span class="habit-name">${h.habit}</span>
+              ${h.category?`<span class="habit-cat">${h.category}</span>`:''}
+            </div>`).join('')
+        }
+        ${activeHabits.length>0 ? `<div class="habit-score">0 / ${activeHabits.length} completed today</div>` : ''}
       </div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${clr}"></div></div>
-    </div>`;
-  }).join('');
-}
 
-function renderHabits(habits) {
-  const daily = habits.filter(h => h.active && h.frequency === 'Daily');
-  const weekly = habits.filter(h => h.active && h.frequency === 'Weekly');
-  const all = [...daily, ...weekly];
-
-  document.getElementById('habitChip').textContent = all.length + ' active';
-
-  document.getElementById('habitList').innerHTML = all.map(h => {
-    const cat = h.category || '';
-    return `<div class="habit-row">
-      <div class="habit-circle" title="Mark done"></div>
-      <div class="habit-info">
-        <div class="habit-name">${esc(h.habit)}</div>
-        <div class="habit-freq">${esc(h.frequency)}</div>
+      <!-- Resources + Reserves Alerts -->
+      <div class="green-card">
+        <div class="card-label">🪣 Resources + Reserves Alerts</div>
+        ${lowStock.length===0
+          ? `<div class="empty-light">All stocked up! 🎉</div>`
+          : lowStock.map(i => `
+            <div class="alert-row">
+              <div class="alert-info">
+                <div class="alert-item-name">${i.item}</div>
+                ${i.category?`<div class="alert-cat">${i.category}</div>`:''}
+              </div>
+              <span class="tag ${i.status==='Low'?'tag-low-inv':'tag-order'}">${i.status}</span>
+            </div>`).join('')
+        }
       </div>
-      <span class="hcat hc-${esc(cat)}">${esc(cat)}</span>
-    </div>`;
-  }).join('');
-}
+    </div>
 
-function renderInventory(inventory) {
-  const alerts = inventory.filter(i => i.status && !i.status.includes('OK'));
-  const ok     = inventory.filter(i => i.status && i.status.includes('OK'));
-  const sorted = [...alerts, ...ok].slice(0, 8);
+    <!-- ── WEEK STRIP ──────────────────────────────── -->
+    <div class="section-header">The Rest of the Story <em>(Week in Review)</em></div>
+    <div class="week-strip">
+      ${week.map((day,i) => {
+        const ds = day.toISOString().split('T')[0];
+        const dayTasks = tasks.filter(t => t.intendedDate && t.intendedDate.startsWith(ds));
+        const isToday = sameDay(day, now);
+        return `
+          <div class="day-card${isToday?' today':''}">
+            <div class="day-letter">${DAYS[i]}</div>
+            <div class="day-num">${day.getMonth()+1}/${day.getDate()}</div>
+            ${dayTasks.length===0
+              ? `<div class="day-open">open</div>`
+              : dayTasks.slice(0,4).map(t =>
+                  `<div class="day-task-chip">${t.task.length>20?t.task.slice(0,20)+'…':t.task}</div>`
+                ).join('') + (dayTasks.length>4 ? `<div class="day-more">+${dayTasks.length-4} more</div>` : '')
+            }
+          </div>`;
+      }).join('')}
+    </div>
 
-  document.getElementById('kpiStock').textContent = alerts.length;
-  document.getElementById('invChip').textContent  = alerts.length + ' alerts';
+    <!-- ── ECOSYSTEM REVIEW ────────────────────────── -->
+    <div class="section-header">Ecosystem Review</div>
+    <div class="eco-grid">
+      ${ECOSYSTEMS.map(eco => {
+        const et = tasks.filter(t => t.ecosystem===eco);
+        const done  = et.filter(t => t.status==='Done').length;
+        const inProg= et.filter(t => t.status==='In Progress').length;
+        const todo  = et.filter(t => !['Done','In Progress'].includes(t.status)).length;
+        const total = et.length;
+        const donePct = total ? Math.round(done/total*100) : 0;
+        const id = 'eco-'+eco.replace(/[\s\/]+/g,'-').toLowerCase();
+        return `
+          <div class="eco-card">
+            <div class="eco-name">${eco}</div>
+            <div class="eco-chart-wrap"><canvas id="${id}"></canvas></div>
+            <div class="eco-legend">
+              <div class="eco-leg-item"><div class="eco-leg-dot" style="background:#043000"></div>${done} done (${donePct}%)</div>
+              <div class="eco-leg-item"><div class="eco-leg-dot" style="background:#efb001"></div>${inProg} in progress</div>
+              <div class="eco-leg-item"><div class="eco-leg-dot" style="background:#f094a3"></div>${todo} to do</div>
+            </div>
+          </div>`;
+      }).join('')}
+    </div>
 
-  document.getElementById('invList').innerHTML = sorted.map(i => {
-    const s = i.status || 'OK';
-    const sKey = s.includes('Low') ? 'Low' : s.includes('Out') ? 'Out' : s.includes('Order') ? 'Order' : 'OK';
-    const sLbl = s.includes('Low') ? 'Low' : s.includes('Out') ? 'Out' : s.includes('Order') ? 'Order soon' : 'OK';
-    return `<div class="inv-row">
-      <div>
-        <div class="inv-name">${esc(i.item)}</div>
-        <div class="inv-cat">${esc(i.category||'')}</div>
+    <!-- ── PROVISION PLANNING ──────────────────────── -->
+    <div class="section-header">Provision Planning</div>
+    <div class="provision-grid">
+
+      <!-- Love Letters from Capitalism -->
+      <div class="provision-card">
+        <div class="provision-title">💌 Love Letters from Capitalism</div>
+        ${bills.length===0
+          ? `<div class="empty-dark">No bills found</div>`
+          : bills.map(b => `
+            <div class="bill-row">
+              <span class="bill-name">${b.name}</span>
+              <span class="bill-amt">${fmt$(b.amount)}<span style="font-size:0.6rem;font-weight:400;opacity:0.6">/mo</span></span>
+            </div>`).join('')
+        }
+        ${bills.length>0 ? `
+          <div style="margin-top:10px;padding-top:8px;border-top:2px solid var(--green3);display:flex;justify-content:space-between;font-size:0.8rem;font-weight:700;color:var(--green)">
+            <span>Monthly Total</span>
+            <span style="color:var(--coral)">${fmt$(bills.reduce((s,b)=>s+(b.amount||0),0))}</span>
+          </div>` : ''}
       </div>
-      <span class="s-badge s-${sKey}">${sLbl}</span>
-    </div>`;
-  }).join('');
+
+      <!-- Monthly Budget Tracker -->
+      <div class="provision-card">
+        <div class="provision-title">📊 Monthly Budget Tracker</div>
+        ${(() => {
+          const types = [...new Set(finance.filter(f=>f.target).map(f=>f.type))].filter(Boolean);
+          if (types.length===0) return `<div class="empty-dark">Add budget targets in Finance</div>`;
+          return types.map(type => {
+            const items = finance.filter(f=>f.type===type);
+            const spent = items.reduce((s,f)=>s+(f.amount||0),0);
+            const target = items.reduce((s,f)=>s+(f.target||0),0);
+            if (!target) return '';
+            const pct = Math.min(100, Math.round(spent/target*100));
+            const color = pct>90?'var(--coral)':pct>65?'var(--gold)':'var(--green)';
+            return `
+              <div class="budget-row">
+                <div class="budget-lbl">
+                  <span>${type}</span>
+                  <span>${fmt$(spent)} / ${fmt$(target)}</span>
+                </div>
+                <div class="bar-bg">
+                  <div class="bar-fill" style="width:${pct}%;background:${color}"></div>
+                </div>
+              </div>`;
+          }).join('');
+        })()}
+      </div>
+
+      <!-- Wish List -->
+      <div class="provision-card gold">
+        <div class="provision-title">⭐ Wish List</div>
+        ${(wishlist||[]).length===0
+          ? `<div class="empty-dark">Nothing on the list yet</div>`
+          : (wishlist||[]).slice(0,7).map(w => `
+            <div class="wish-row">
+              <div>
+                <div class="wish-name">${w.item}</div>
+                ${w.store?`<div class="wish-store">${w.store}</div>`:''}
+              </div>
+              <span class="wish-cost">${fmt$(w.cost)}</span>
+            </div>`).join('')
+        }
+      </div>
+
+      <!-- Parker Wells Time Tracker -->
+      <div class="provision-card gold">
+        <div class="provision-title">⏱️ Parker Wells Time Tracker</div>
+        ${thisMonth.length===0
+          ? `<div class="empty-dark">No time logged this month</div>`
+          : thisMonth.slice(0,5).map(t => `
+            <div class="time-row">
+              <div class="time-project">${t.project}</div>
+              <div class="time-meta">${[t.client, t.hoursWorked?t.hoursWorked+'h':null, fmt$(t.totalAmount)].filter(Boolean).join(' · ')}</div>
+            </div>`).join('')
+        }
+        ${thisMonth.length>0 ? `
+          <div class="time-total">
+            <span>This Month</span>
+            <span>${fmt$(totalEarned)}</span>
+          </div>` : ''}
+      </div>
+    </div>
+  `;
+
+  // Render ecosystem pie charts after DOM is ready
+  requestAnimationFrame(() => {
+    ECOSYSTEMS.forEach(eco => {
+      const et = tasks.filter(t => t.ecosystem===eco);
+      const done   = et.filter(t => t.status==='Done').length;
+      const inProg = et.filter(t => t.status==='In Progress').length;
+      const todo   = et.filter(t => !['Done','In Progress'].includes(t.status)).length;
+      const id = 'eco-'+eco.replace(/[\s\/]+/g,'-').toLowerCase();
+      renderEcoChart(id, done, inProg, todo);
+    });
+  });
 }
 
-function renderFinance(finance) {
-  const income = finance.filter(f => f.type === 'Income');
-  const goals  = finance.filter(f => f.type === 'Goal');
-  const bills  = finance.filter(f => f.type === 'Bill');
-  let html = '';
-
-  if (goals.length) {
-    html += `<div class="fin-label" style="color:#3B82F6">◎ Goals</div>`;
-    html += goals.map(f => {
-      const pct = f.target > 0 ? Math.round(f.amount/f.target*100) : 0;
-      return `<div class="goal-item">
-        <div class="goal-row">
-          <div class="goal-name">${esc(f.name)}</div>
-          <div class="goal-nums"><strong style="color:#10B981">${fmtMoney(f.amount)}</strong> / ${fmtMoney(f.target)}</div>
-        </div>
-        <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:#3B82F6"></div></div>
-      </div>`;
-    }).join('');
-  }
-
-  if (income.length) {
-    html += `<div class="fin-label" style="color:#059669">↑ Income</div>`;
-    html += income.map(f => `<div class="fin-row">
-      <div class="fin-name">${esc(f.name)}</div>
-      <div class="fin-amt" style="color:#10B981">${fmtMoney(f.amount)}</div>
-    </div>`).join('');
-  }
-
-  if (bills.length) {
-    html += `<div class="fin-label" style="color:#EF4444">↓ Bills</div>`;
-    html += bills.map(f => `<div class="fin-row">
-      <div class="fin-name">${esc(f.name)}</div>
-      <div class="fin-amt">${fmtMoney(f.amount)}<span style="font-size:10px;color:#9CA3AF;font-weight:400;margin-left:4px">/mo</span></div>
-    </div>`).join('');
-  }
-
-  document.getElementById('finList').innerHTML = html || '<div class="empty">No finance data yet.</div>';
-}
-
-// ── Load data ───────────────────────────────────────────────
 async function load() {
   try {
-    const res  = await fetch('/api/notion');
+    const res = await fetch('/api/notion');
+    if (!res.ok) throw new Error(`API error ${res.status}`);
     const data = await res.json();
-
-    if (data.error) {
-      console.error(data.error);
-      return;
-    }
-
-    const { tasks, habits, inventory, finance } = data;
-
-    renderKPIs(tasks);
-    renderEcoChart(tasks);
-    renderAssigneeChart(tasks);
-    renderUrgent(tasks);
-    renderProjects(tasks);
-    renderHabits(habits);
-    renderInventory(inventory);
-    renderFinance(finance);
-
-  } catch (err) {
-    console.error('Failed to load data:', err);
+    render(data);
+  } catch(e) {
+    document.getElementById('app').innerHTML =
+      `<div class="loading" style="color:var(--coral)">Couldn't load data: ${e.message}</div>`;
   }
 }
 
