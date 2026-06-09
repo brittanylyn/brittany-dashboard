@@ -9,11 +9,13 @@ const DB = {
   finance:   '4bff6adfd43a4fda980be59f20d3bf15',
   wishlist:  '2ff525e0f783441db1d1009a139a678d',
   timetrack: '73e595478c19447cb2c8e7ad1cf210a2',
+  meetings:  '89ea74e105bc400c96cd16a13684f1fe',
 };
 
-function queryDB(dbId, token) {
+function queryDB(dbId, token, filter) {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({});
+    const bodyObj = filter ? { filter } : {};
+    const body = JSON.stringify(bodyObj);
     const options = {
       hostname: 'api.notion.com',
       path: `/v1/databases/${dbId}/query`,
@@ -58,13 +60,17 @@ module.exports = async (req, res) => {
   if (!token) return res.status(500).json({ error: 'NOTION_TOKEN not set' });
 
   try {
-    const [tasksRes, habitsRes, invRes, finRes, wishRes, timeRes] = await Promise.all([
+    const todayStr = new Date().toISOString().split('T')[0];
+    const todayFilter = { property: 'Date', date: { equals: todayStr } };
+
+    const [tasksRes, habitsRes, invRes, finRes, wishRes, timeRes, meetingsRes] = await Promise.all([
       queryDB(DB.tasks,     token),
       queryDB(DB.habits,    token),
       queryDB(DB.inventory, token),
       queryDB(DB.finance,   token),
       queryDB(DB.wishlist,  token),
       queryDB(DB.timetrack, token),
+      queryDB(DB.meetings,  token, todayFilter),
     ]);
 
     const tasks = (tasksRes.results || []).map(p => ({
@@ -139,7 +145,18 @@ module.exports = async (req, res) => {
       notes:         txt(p.properties['Notes']),
     }));
 
-    res.json({ tasks, habits, inventory, finance, wishlist, timetrack, ts: new Date().toISOString() });
+    const meetings = (meetingsRes.results || []).map(p => ({
+      id:          p.id,
+      title:       txt(p.properties['Title']),
+      date:        date(p.properties['Date']),
+      startTime:   txt(p.properties['Start Time']),
+      endTime:     txt(p.properties['End Time']),
+      calendar:    txt(p.properties['Calendar']),
+      location:    txt(p.properties['Location']),
+      description: txt(p.properties['Description']),
+    })).sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+    res.json({ tasks, habits, inventory, finance, wishlist, timetrack, meetings, ts: new Date().toISOString() });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

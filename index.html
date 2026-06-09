@@ -68,10 +68,10 @@ body {
   letter-spacing: 0.04em;
 }
 
-/* ── ROW 1: THREE GREEN CARDS ────────────────────── */
+/* ── ROW 1: FOUR GREEN CARDS ────────────────────── */
 .row-three {
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
   gap: 16px;
 }
 
@@ -431,6 +431,34 @@ body {
   color: var(--green);
 }
 
+/* ── MEETINGS ────────────────────────────────────── */
+.meeting-row {
+  padding: 8px 0;
+  border-bottom: 1px solid rgba(255,255,255,0.07);
+}
+.meeting-row:last-child { border-bottom: none; }
+
+.meeting-time {
+  color: var(--gold);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  margin-bottom: 3px;
+}
+
+.meeting-title {
+  color: var(--white);
+  font-size: 0.82rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.meeting-meta {
+  color: rgba(255,255,255,0.4);
+  font-size: 0.63rem;
+  margin-top: 2px;
+}
+
 /* ── LOADING ─────────────────────────────────────── */
 .loading {
   text-align: center;
@@ -522,7 +550,7 @@ function renderEcoChart(id, done, inProg, todo) {
 }
 
 function render(data) {
-  const { tasks, habits, inventory, finance, wishlist, timetrack } = data;
+  const { tasks, habits, inventory, finance, wishlist, timetrack, meetings } = data;
   const now = today();
   const ts = todayStr();
   const week = getWeek();
@@ -602,6 +630,20 @@ function render(data) {
                 ${i.category?`<div class="alert-cat">${i.category}</div>`:''}
               </div>
               <span class="tag ${i.status==='🔴 Low'?'tag-low-inv':'tag-order'}">${i.status.replace('🔴 ','').replace('🟡 ','')}</span>
+            </div>`).join('')
+        }
+      </div>
+
+      <!-- Today's Meetings -->
+      <div class="green-card">
+        <div class="card-label">📅 What's on the Schedule</div>
+        ${(meetings||[]).length===0
+          ? `<div class="empty-light">No meetings today ✨</div>`
+          : (meetings||[]).map(m => `
+            <div class="meeting-row">
+              <div class="meeting-time">${m.startTime}${m.endTime?' – '+m.endTime:''}</div>
+              <div class="meeting-title">${m.title}</div>
+              ${(m.location||m.calendar) ? `<div class="meeting-meta">${[m.location, m.calendar].filter(Boolean).join(' · ')}</div>` : ''}
             </div>`).join('')
         }
       </div>
