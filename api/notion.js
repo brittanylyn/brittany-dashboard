@@ -156,7 +156,10 @@ module.exports = async (req, res) => {
       description: txt(p.properties['Description']),
     })).sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-    res.json({ tasks, habits, inventory, finance, wishlist, timetrack, meetings, ts: new Date().toISOString() });
+    // DEBUG: include raw meetings response to diagnose token/access issues
+    const meetingsDebug = meetingsRes.results ? null : { status: meetingsRes.status, code: meetingsRes.code, message: meetingsRes.message };
+
+    res.json({ tasks, habits, inventory, finance, wishlist, timetrack, meetings, meetingsDebug, todayStr, ts: new Date().toISOString() });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
