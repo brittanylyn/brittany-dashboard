@@ -61,7 +61,6 @@ module.exports = async (req, res) => {
 
   try {
     const todayStr = new Date().toISOString().split('T')[0];
-    const todayFilter = { property: 'Date', date: { equals: todayStr } };
 
     const [tasksRes, habitsRes, invRes, finRes, wishRes, timeRes, meetingsRes] = await Promise.all([
       queryDB(DB.tasks,     token),
@@ -70,7 +69,7 @@ module.exports = async (req, res) => {
       queryDB(DB.finance,   token),
       queryDB(DB.wishlist,  token),
       queryDB(DB.timetrack, token),
-      queryDB(DB.meetings,  token, todayFilter),
+      queryDB(DB.meetings,  token),
     ]);
 
     const tasks = (tasksRes.results || []).map(p => ({
@@ -154,12 +153,9 @@ module.exports = async (req, res) => {
       calendar:    txt(p.properties['Calendar']),
       location:    txt(p.properties['Location']),
       description: txt(p.properties['Description']),
-    })).sort((a, b) => a.startTime.localeCompare(b.startTime));
+    })).filter(m => m.date === todayStr).sort((a, b) => a.startTime.localeCompare(b.startTime));
 
-    // DEBUG: include raw meetings response to diagnose token/access issues
-    const meetingsDebug = meetingsRes.results ? null : { status: meetingsRes.status, code: meetingsRes.code, message: meetingsRes.message };
-
-    res.json({ tasks, habits, inventory, finance, wishlist, timetrack, meetings, meetingsDebug, todayStr, ts: new Date().toISOString() });
+    res.json({ tasks, habits, inventory, finance, wishlist, timetrack, meetings, ts: new Date().toISOString() });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
