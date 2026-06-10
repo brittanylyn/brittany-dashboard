@@ -99,8 +99,18 @@ module.exports = async (req, res) => {
   const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
   if (!clientId || !clientSecret || !refreshToken) {
-    // Return empty gracefully — dashboard still loads without meetings
-    return res.status(200).json({ meetings: [], warning: 'Google Calendar env vars not set' });
+    // Debug: show which vars are present/missing (no values exposed)
+    return res.status(200).json({
+      meetings: [],
+      warning: 'Google Calendar env vars not set',
+      debug: {
+        hasClientId:     !!clientId,
+        hasClientSecret: !!clientSecret,
+        hasRefreshToken: !!refreshToken,
+        googleKeys:      Object.keys(process.env).filter(k => k.startsWith('GOOGLE')),
+        allKeyCount:     Object.keys(process.env).length,
+      },
+    });
   }
 
   try {
