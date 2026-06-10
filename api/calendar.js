@@ -1,7 +1,7 @@
 const https = require('https');
 
 // ─────────────────────────────────────────────
-//  Calendars to fetch
+//  Calendars to fetch (v2)
 // ─────────────────────────────────────────────
 const CAL_IDS = [
   { id: 'brittlallen@gmail.com',                                       name: 'Personal',     color: '#EC4899' },
