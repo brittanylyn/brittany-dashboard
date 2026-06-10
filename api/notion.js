@@ -154,7 +154,6 @@ module.exports = async (req, res) => {
       location:    txt(p.properties['Location']),
       description: txt(p.properties['Description']),
     })).filter(m => m.date === todayStr).sort((a, b) => a.startTime.localeCompare(b.startTime));
-
     res.json({ tasks, habits, inventory, finance, wishlist, timetrack, meetings, ts: new Date().toISOString() });
   } catch (err) {
     console.error(err);
