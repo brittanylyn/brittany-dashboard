@@ -1,13 +1,5 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/notion.js",   "use": "@vercel/node" },
-    { "src": "api/calendar.js", "use": "@vercel/node" },
-    { "src": "index.html",      "use": "@vercel/static" }
-  ],
-  "routes": [
-    { "src": "/api/notion",   "dest": "/api/notion.js"   },
-    { "src": "/api/calendar", "dest": "/api/calendar.js" },
-    { "src": "/(.*)",         "dest": "/index.html"      }
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }
