@@ -1,14 +1,29 @@
 const https = require('https');
 
 // ─────────────────────────────────────────────
-//  Calendars to fetch (v2)
+//  Calendar groups — each uses its own token
 // ─────────────────────────────────────────────
-const CAL_IDS = [
-  { id: 'brittlallen@gmail.com',                                       name: 'Personal',     color: '#EC4899' },
-  { id: 'brittany@parkerwells.co',                                     name: 'Parker Wells', color: '#3B82F6' },
-  { id: 'iambrittanylyn@gmail.com',                                    name: 'Creator',      color: '#8B5CF6' },
-  { id: 'en.usa#holiday@group.v.calendar.google.com',                  name: 'Holidays',     color: '#10B981' },
-  { id: 'qk9ba4kukmp8ail5vrnoagnkv5pvid20@import.calendar.google.com', name: 'GOTR',         color: '#F97316' },
+const CAL_GROUPS = [
+  {
+    tokenEnv: 'GOOGLE_REFRESH_TOKEN',
+    calendars: [
+      { id: 'brittlallen@gmail.com',                        name: 'Personal',  color: '#EC4899' },
+      { id: 'iambrittanylyn@gmail.com',                     name: 'Creator',   color: '#8B5CF6' },
+      { id: 'en.usa#holiday@group.v.calendar.google.com',   name: 'Holidays',  color: '#10B981' },
+    ],
+  },
+  {
+    tokenEnv: 'GOTR_REFRESH_TOKEN',
+    calendars: [
+      { id: 'brittany@gotrnola.org', name: 'GOTR', color: '#F97316' },
+    ],
+  },
+  {
+    tokenEnv: 'PARKER_REFRESH_TOKEN',
+    calendars: [
+      { id: 'brittany@parkerwells.co', name: 'Parker Wells', color: '#3B82F6' },
+    ],
+  },
 ];
 
 // ─────────────────────────────────────────────
@@ -96,26 +111,12 @@ module.exports = async (req, res) => {
 
   const clientId     = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
-  const refreshToken = process.env.GOOGLE_REFRESH_TOKEN;
 
-  if (!clientId || !clientSecret || !refreshToken) {
-    // Debug: show which vars are present/missing (no values exposed)
-    return res.status(200).json({
-      meetings: [],
-      warning: 'Google Calendar env vars not set',
-      debug: {
-        hasClientId:     !!clientId,
-        hasClientSecret: !!clientSecret,
-        hasRefreshToken: !!refreshToken,
-        googleKeys:      Object.keys(process.env).filter(k => k.startsWith('GOOGLE')),
-        allKeyCount:     Object.keys(process.env).length,
-      },
-    });
+  if (!clientId || !clientSecret) {
+    return res.status(200).json({ meetings: [], warning: 'GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET not set' });
   }
 
   try {
-    const accessToken = await refreshAccessToken(clientId, clientSecret, refreshToken);
-
     // Current week: Sunday 00:00 → Saturday 23:59
     const now = new Date();
     const sun = new Date(now);
@@ -124,37 +125,49 @@ module.exports = async (req, res) => {
     const sat = new Date(sun);
     sat.setDate(sun.getDate() + 6);
     sat.setHours(23, 59, 59, 999);
-
     const timeMin = sun.toISOString();
     const timeMax = sat.toISOString();
 
-    const results = await Promise.allSettled(
-      CAL_IDS.map(async (cal) => {
+    // Fetch all calendar groups in parallel, each with its own token
+    const groupResults = await Promise.allSettled(
+      CAL_GROUPS.map(async (group) => {
+        const refreshToken = process.env[group.tokenEnv];
+        if (!refreshToken) return [];
         try {
-          const data = await fetchCalendarEvents(accessToken, cal.id, timeMin, timeMax);
-          return (data.items || []).map(ev => ({
-            title:    ev.summary || 'Untitled',
-            start:    ev.start?.dateTime || ev.start?.date || '',
-            end:      ev.end?.dateTime   || ev.end?.date   || '',
-            allDay:   !ev.start?.dateTime,
-            date:     (ev.start?.dateTime || ev.start?.date || '').slice(0, 10),
-            calendar: cal.name,
-            color:    cal.color,
-          }));
+          const accessToken = await refreshAccessToken(clientId, clientSecret, refreshToken);
+          const calResults = await Promise.allSettled(
+            group.calendars.map(async (cal) => {
+              try {
+                const data = await fetchCalendarEvents(accessToken, cal.id, timeMin, timeMax);
+                return (data.items || []).map(ev => ({
+                  title:    ev.summary || 'Untitled',
+                  start:    ev.start?.dateTime || ev.start?.date || '',
+                  end:      ev.end?.dateTime   || ev.end?.date   || '',
+                  allDay:   !ev.start?.dateTime,
+                  date:     (ev.start?.dateTime || ev.start?.date || '').slice(0, 10),
+                  calendar: cal.name,
+                  color:    cal.color,
+                }));
+              } catch (e) {
+                console.error(`Fetch failed for ${cal.id}:`, e.message);
+                return [];
+              }
+            })
+          );
+          return calResults.flatMap(r => r.status === 'fulfilled' ? r.value : []);
         } catch (e) {
-          console.error(`Calendar fetch failed for ${cal.id}:`, e.message);
+          console.error(`Token refresh failed for ${group.tokenEnv}:`, e.message);
           return [];
         }
       })
     );
 
-    const meetings = results.flatMap(r => r.status === 'fulfilled' ? r.value : []);
+    const meetings = groupResults.flatMap(r => r.status === 'fulfilled' ? r.value : []);
     meetings.sort((a, b) => a.start.localeCompare(b.start));
 
     res.json({ meetings, ts: new Date().toISOString() });
   } catch (err) {
     console.error('Calendar API error:', err);
-    // Degrade gracefully — never break the dashboard
     res.status(200).json({ meetings: [], error: err.message });
   }
 };
