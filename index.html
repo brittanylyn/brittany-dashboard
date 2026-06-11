@@ -573,7 +573,7 @@ function renderEcoChart(id, done, inProg, todo) {
       const ctx = chart.ctx;
       const cx = (area.left + area.right) / 2;
       const cy = (area.top + area.bottom) / 2;
-      const size = Math.max(13, Math.round((area.right - area.left) / 3.4));
+      const size = Math.max(11, Math.round((area.right - area.left) / 6));
       ctx.save();
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
