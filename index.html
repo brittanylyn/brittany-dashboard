@@ -10,6 +10,9 @@
 <style>
 * { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Scale all rem-based text up ~15% for readability */
+html { font-size: 115%; }
+
 :root {
   --cream:  #ffefdd;
   --green:  #043000;
@@ -25,7 +28,7 @@ body {
   background: var(--cream);
   font-family: 'DM Sans', sans-serif;
   color: var(--green);
-  padding: 28px 24px 48px;
+  padding: 34px 30px 56px;
   min-width: 900px;
 }
 
@@ -72,14 +75,14 @@ body {
 .row-three {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 
 .green-card {
   background: var(--green);
   border-radius: 14px;
-  padding: 20px;
-  min-height: 240px;
+  padding: 26px;
+  min-height: 260px;
 }
 
 .card-label {
@@ -256,7 +259,7 @@ body {
 .week-strip {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 10px;
+  gap: 14px;
 }
 
 .day-card {
@@ -333,7 +336,7 @@ body {
 .eco-grid {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  gap: 12px;
+  gap: 16px;
 }
 
 .eco-card {
@@ -391,14 +394,14 @@ body {
 .provision-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr 1fr;
-  gap: 16px;
+  gap: 20px;
 }
 
 .provision-card {
   background: var(--white);
   border: 2px solid rgba(4,48,0,0.12);
   border-radius: 14px;
-  padding: 18px 16px;
+  padding: 22px 20px;
   min-height: 200px;
 }
 
