@@ -562,6 +562,28 @@ function renderEcoChart(id, done, inProg, todo) {
   if (!canvas) return;
   if (ecoCharts[id]) ecoCharts[id].destroy();
   const total = done + inProg + todo;
+  const donePct = total ? Math.round(done/total*100) : 0;
+
+  // Plugin: draw the completion % in the center of the doughnut
+  const centerLabel = {
+    id: 'centerLabel-' + id,
+    afterDraw(chart) {
+      const area = chart.chartArea;
+      if (!area) return;
+      const ctx = chart.ctx;
+      const cx = (area.left + area.right) / 2;
+      const cy = (area.top + area.bottom) / 2;
+      const size = Math.max(13, Math.round((area.right - area.left) / 3.4));
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#043000';
+      ctx.font = `700 ${size}px 'DM Sans', sans-serif`;
+      ctx.fillText(donePct + '%', cx, cy);
+      ctx.restore();
+    }
+  };
+
   ecoCharts[id] = new Chart(canvas, {
     type: 'doughnut',
     data: {
@@ -577,7 +599,7 @@ function renderEcoChart(id, done, inProg, todo) {
     options: {
       responsive: true,
       maintainAspectRatio: true,
-      cutout: '58%',
+      cutout: '62%',
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -590,7 +612,8 @@ function renderEcoChart(id, done, inProg, todo) {
           }
         }
       }
-    }
+    },
+    plugins: [centerLabel]
   });
 }
 
