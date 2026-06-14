@@ -221,6 +221,71 @@ body {
   margin-top: 12px;
   font-weight: 600;
 }
+.habit-type-label {
+  font-size: 0.58rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin: 9px 0 1px;
+  opacity: 0.9;
+}
+
+/* Monthly rhythm rings */
+.rhythm-wrap {
+  background: var(--green);
+  border-radius: 16px;
+  padding: 18px 22px 24px;
+  margin-bottom: 26px;
+}
+.rhythm-legend {
+  display: flex;
+  gap: 18px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+.rl-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--white);
+  font-size: 0.66rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.rl-dot { width: 10px; height: 10px; border-radius: 50%; }
+.ring-cal {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.ring-head {
+  text-align: center;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.6rem;
+  font-weight: 700;
+  padding-bottom: 4px;
+}
+.ring-empty { aspect-ratio: 1; }
+.ring-day {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 0;
+  border-radius: 10px;
+}
+.ring-today { background: rgba(255,255,255,0.09); }
+.ring-svg { width: 40px; height: 40px; }
+.ring-future { opacity: 0.45; }
+.ring-daynum {
+  color: rgba(255,255,255,0.55);
+  font-size: 0.56rem;
+  margin-top: 3px;
+  font-weight: 600;
+}
+.ring-today .ring-daynum { color: var(--gold); }
 
 /* Inventory alerts */
 .alert-row {
@@ -618,7 +683,7 @@ function renderEcoChart(id, done, inProg, todo) {
 }
 
 function render(data, meetings) {
-  const { tasks, habits, inventory, finance, wishlist, timetrack } = data;
+  const { tasks, habitDefs, habitDays, inventory, finance, wishlist, timetrack } = data;
   const now = today();
   const ts  = todayStr();
   const week = getWeek();
@@ -637,7 +702,12 @@ function render(data, meetings) {
       return a.start.localeCompare(b.start);
     });
 
-  const activeHabits = habits.filter(h => h.active);
+  const TYPE_COLORS = { MIND:'#5b8def', BODY:'#e24d49', SOUL:'#b07cf0', ENVIRONMENT:'#3fae6a' };
+  const HABIT_TYPE_ORDER = ['MIND','BODY','SOUL','ENVIRONMENT'];
+  const hDefs = habitDefs || [];
+  const todayChecks = ((habitDays||[]).find(d => d.date === ts) || {}).checks || {};
+  const isHabitDone = (name) => !!todayChecks[name];
+  const habitsDoneToday = hDefs.filter(h => isHabitDone(h.name)).length;
   const lowStock     = inventory.filter(i => i.status==='Low' || i.status==='Order Soon');
   const bills        = finance.filter(f => f.type==='Bill' || f.type==='Subscription');
 
@@ -689,16 +759,21 @@ function render(data, meetings) {
       <!-- Becoming: My Daily Habits -->
       <div class="green-card">
         <div class="card-label">🌱 Becoming: My Daily Habits</div>
-        ${activeHabits.length===0
-          ? `<div class="empty-light">No active habits yet</div>`
-          : activeHabits.map(h => `
-            <div class="habit-row">
-              <div class="habit-dot"></div>
-              <span class="habit-name">${h.habit}</span>
-              ${h.category?`<span class="habit-cat">${h.category}</span>`:''}
-            </div>`).join('')
+        ${hDefs.length===0
+          ? `<div class="empty-light">No habits yet</div>`
+          : HABIT_TYPE_ORDER.map(type => {
+              const hs = hDefs.filter(h => h.type===type);
+              if (!hs.length) return '';
+              return `
+                <div class="habit-type-label" style="color:${TYPE_COLORS[type]}">${type}</div>
+                ${hs.map(h => `
+                  <div class="habit-row">
+                    <div class="habit-dot${isHabitDone(h.name)?' done':''}" style="border-color:${TYPE_COLORS[type]}${isHabitDone(h.name)?`;background:${TYPE_COLORS[type]}`:''}"></div>
+                    <span class="habit-name">${h.name}</span>
+                  </div>`).join('')}`;
+            }).join('')
         }
-        ${activeHabits.length>0 ? `<div class="habit-score">0 / ${activeHabits.length} completed today</div>` : ''}
+        ${hDefs.length>0 ? `<div class="habit-score">${habitsDoneToday} / ${hDefs.length} completed today</div>` : ''}
       </div>
 
       <!-- Resources + Reserves Alerts -->
@@ -715,6 +790,44 @@ function render(data, meetings) {
               <span class="tag ${i.status==='Low'?'tag-low-inv':'tag-order'}">${i.status}</span>
             </div>`).join('')
         }
+      </div>
+    </div>
+
+    <!-- ── BECOMING: MONTHLY RHYTHM (rings) ─────────── -->
+    <div class="section-header">Becoming <em>(My Monthly Rhythm)</em></div>
+    <div class="rhythm-wrap">
+      <div class="rhythm-legend">
+        ${HABIT_TYPE_ORDER.map(t => `<div class="rl-item"><span class="rl-dot" style="background:${TYPE_COLORS[t]}"></span>${t}</div>`).join('')}
+      </div>
+      <div class="ring-cal">
+        ${['S','M','T','W','T','F','S'].map(d => `<div class="ring-head">${d}</div>`).join('')}
+        ${(() => {
+          const yr = now.getFullYear(), mo = now.getMonth();
+          const startWeekday = new Date(yr, mo, 1).getDay();
+          const numDays = new Date(yr, mo+1, 0).getDate();
+          const dayMap = {};
+          (habitDays||[]).forEach(d => { dayMap[d.date] = d.checks; });
+          let cells = Array.from({length:startWeekday}).map(() => `<div class="ring-empty"></div>`).join('');
+          for (let dd=1; dd<=numDays; dd++) {
+            const dateStr = `${yr}-${String(mo+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+            const checks = dayMap[dateStr] || {};
+            const isToday = dd === now.getDate();
+            const future = dd > now.getDate();
+            const rings = HABIT_TYPE_ORDER.map((type, ti) => {
+              const r = 16 - ti*3.4;
+              const C = 2*Math.PI*r;
+              const hs = hDefs.filter(h => h.type===type);
+              const done = hs.filter(h => checks[h.name]).length;
+              const frac = hs.length ? done/hs.length : 0;
+              return `<circle cx="18" cy="18" r="${r.toFixed(2)}" fill="none" stroke="${TYPE_COLORS[type]}" stroke-opacity="0.13" stroke-width="2.6"/><circle cx="18" cy="18" r="${r.toFixed(2)}" fill="none" stroke="${TYPE_COLORS[type]}" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="${(frac*C).toFixed(2)} ${C.toFixed(2)}"/>`;
+            }).join('');
+            cells += `<div class="ring-day${isToday?' ring-today':''}">
+              <svg viewBox="0 0 36 36" class="ring-svg${future?' ring-future':''}"><g transform="rotate(-90 18 18)">${rings}</g></svg>
+              <div class="ring-daynum">${dd}</div>
+            </div>`;
+          }
+          return cells;
+        })()}
       </div>
     </div>
 

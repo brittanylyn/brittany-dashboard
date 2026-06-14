@@ -4,16 +4,16 @@ const NOTION_VERSION = '2022-06-28';
 
 const DB = {
   tasks:     'b43aa2cb03a94351b50e0c2e5e6ef998',
-  habits:    'b67bc49098e74cabae1b88646b5abfbe',
+  habits:    '8cfe55a110564a898da74130dfaced20',
   inventory: 'db5157429e0a41db834870127a58c949',
   finance:   '4bff6adfd43a4fda980be59f20d3bf15',
   wishlist:  '2ff525e0f783441db1d1009a139a678d',
   timetrack: '73e595478c19447cb2c8e7ad1cf210a2',
 };
 
-function queryDB(dbId, token) {
+function queryDB(dbId, token, payload = {}) {
   return new Promise((resolve, reject) => {
-    const body = JSON.stringify({});
+    const body = JSON.stringify(payload);
     const options = {
       hostname: 'api.notion.com',
       path: `/v1/databases/${dbId}/query`,
@@ -58,9 +58,14 @@ module.exports = async (req, res) => {
   if (!token) return res.status(500).json({ error: 'NOTION_TOKEN not set' });
 
   try {
+    const mStart = new Date();
+    const monthStart = `${mStart.getUTCFullYear()}-${String(mStart.getUTCMonth() + 1).padStart(2, '0')}-01`;
     const [tasksRes, habitsRes, invRes, finRes, wishRes, timeRes] = await Promise.all([
       queryDB(DB.tasks,     token),
-      queryDB(DB.habits,    token),
+      queryDB(DB.habits,    token, {
+        filter: { property: 'Date', date: { on_or_after: monthStart } },
+        sorts:  [{ property: 'Date', direction: 'ascending' }],
+      }),
       queryDB(DB.inventory, token),
       queryDB(DB.finance,   token),
       queryDB(DB.wishlist,  token),
@@ -85,13 +90,22 @@ module.exports = async (req, res) => {
       notes:         txt(p.properties['Notes']),
     }));
 
-    const habits = (habitsRes.results || []).map(p => ({
-      id:        p.id,
-      habit:     txt(p.properties['Habit']),
-      category:  sel(p.properties['Category']),
-      frequency: sel(p.properties['Frequency']),
-      active:    chk(p.properties['Active']),
-    }));
+    // Habit type map drives the Apple Move-style rings. To add a habit:
+    // add a checkbox column in Notion AND add it here with its type.
+    const HABIT_TYPES = {
+      'Read': 'MIND',
+      'Walk/Workout': 'BODY',
+      'Take Vitamins': 'BODY',
+      'Drink 80 oz Water': 'BODY',
+      'Devotion Time with God': 'SOUL',
+      'Make Bed': 'ENVIRONMENT',
+    };
+    const habitDefs = Object.entries(HABIT_TYPES).map(([name, type]) => ({ name, type }));
+    const habitDays = (habitsRes.results || []).map(p => {
+      const checks = {};
+      for (const def of habitDefs) checks[def.name] = chk(p.properties[def.name]);
+      return { date: date(p.properties['Date']), checks };
+    }).filter(d => d.date);
 
     const inventory = (invRes.results || []).map(p => ({
       id:          p.id,
@@ -139,7 +153,7 @@ module.exports = async (req, res) => {
       notes:         txt(p.properties['Notes']),
     }));
 
-    res.json({ tasks, habits, inventory, finance, wishlist, timetrack, ts: new Date().toISOString() });
+    res.json({ tasks, habitDefs, habitDays, inventory, finance, wishlist, timetrack, ts: new Date().toISOString() });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
