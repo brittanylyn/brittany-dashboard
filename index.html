@@ -287,6 +287,16 @@ body {
 }
 .ring-today .ring-daynum { color: var(--gold); }
 
+/* Compact rhythm — fits inside a third-width column on the Personal page */
+.rhythm-compact .rhythm-legend { gap: 9px; margin-bottom: 12px; }
+.rhythm-compact .rl-item { font-size: 0.56rem; gap: 4px; }
+.rhythm-compact .rl-dot { width: 8px; height: 8px; }
+.rhythm-compact .ring-cal { gap: 3px; }
+.rhythm-compact .ring-head { font-size: 0.52rem; padding-bottom: 2px; }
+.rhythm-compact .ring-day { padding: 2px 0; border-radius: 7px; }
+.rhythm-compact .ring-svg { width: 100%; height: auto; }
+.rhythm-compact .ring-daynum { font-size: 0.5rem; margin-top: 1px; }
+
 /* Inventory alerts */
 .alert-row {
   display: flex;
@@ -711,6 +721,45 @@ const ECOSYSTEMS = ['GOTR','Maroon','Mellow Yellow','APC','Parker Wells','Job Se
 const DAYS = ['S','M','T','W','Th','F','S'];
 const ecoCharts = {};
 
+// Shared habit ring config (used by home "Daily Habits" + the Monthly Rhythm calendar)
+const HABIT_TYPE_COLORS = { MIND:'#5b8def', BODY:'#e24d49', SOUL:'#b07cf0', ENVIRONMENT:'#3fae6a' };
+const HABIT_TYPE_ORDER_G = ['MIND','BODY','SOUL','ENVIRONMENT'];
+
+// Reusable Monthly Rhythm calendar (legend + ring grid). Self-contained: computes its own month.
+function monthlyRhythmInner(data) {
+  const now = today();
+  const hDefs = data.habitDefs || [];
+  const habitDays = data.habitDays || [];
+  const legend = HABIT_TYPE_ORDER_G.map(t =>
+    `<div class="rl-item"><span class="rl-dot" style="background:${HABIT_TYPE_COLORS[t]}"></span>${t}</div>`).join('');
+  const yr = now.getFullYear(), mo = now.getMonth();
+  const startWeekday = new Date(yr, mo, 1).getDay();
+  const numDays = new Date(yr, mo+1, 0).getDate();
+  const dayMap = {};
+  habitDays.forEach(d => { dayMap[d.date] = d.checks; });
+  const heads = ['S','M','T','W','T','F','S'].map(d => `<div class="ring-head">${d}</div>`).join('');
+  let cells = Array.from({length:startWeekday}).map(() => `<div class="ring-empty"></div>`).join('');
+  for (let dd=1; dd<=numDays; dd++) {
+    const dateStr = `${yr}-${String(mo+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
+    const checks = dayMap[dateStr] || {};
+    const isToday = dd === now.getDate();
+    const future = dd > now.getDate();
+    const rings = HABIT_TYPE_ORDER_G.map((type, ti) => {
+      const r = 16 - ti*3.4;
+      const C = 2*Math.PI*r;
+      const hs = hDefs.filter(h => h.type===type);
+      const done = hs.filter(h => checks[h.name]).length;
+      const frac = hs.length ? done/hs.length : 0;
+      return `<circle cx="18" cy="18" r="${r.toFixed(2)}" fill="none" stroke="${HABIT_TYPE_COLORS[type]}" stroke-opacity="0.13" stroke-width="2.6"/><circle cx="18" cy="18" r="${r.toFixed(2)}" fill="none" stroke="${HABIT_TYPE_COLORS[type]}" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="${(frac*C).toFixed(2)} ${C.toFixed(2)}"/>`;
+    }).join('');
+    cells += `<div class="ring-day${isToday?' ring-today':''}">
+      <svg viewBox="0 0 36 36" class="ring-svg${future?' ring-future':''}"><g transform="rotate(-90 18 18)">${rings}</g></svg>
+      <div class="ring-daynum">${dd}</div>
+    </div>`;
+  }
+  return `<div class="rhythm-legend">${legend}</div><div class="ring-cal">${heads}${cells}</div>`;
+}
+
 function today() { return new Date(); }
 function todayStr() { const d=today(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 
@@ -954,44 +1003,6 @@ function renderHome(data, meetings) {
       </div>
     </div>
 
-    <!-- ── BECOMING: MONTHLY RHYTHM (rings) ─────────── -->
-    <div class="section-header">Becoming <em>(My Monthly Rhythm)</em></div>
-    <div class="rhythm-wrap">
-      <div class="rhythm-legend">
-        ${HABIT_TYPE_ORDER.map(t => `<div class="rl-item"><span class="rl-dot" style="background:${TYPE_COLORS[t]}"></span>${t}</div>`).join('')}
-      </div>
-      <div class="ring-cal">
-        ${['S','M','T','W','T','F','S'].map(d => `<div class="ring-head">${d}</div>`).join('')}
-        ${(() => {
-          const yr = now.getFullYear(), mo = now.getMonth();
-          const startWeekday = new Date(yr, mo, 1).getDay();
-          const numDays = new Date(yr, mo+1, 0).getDate();
-          const dayMap = {};
-          (habitDays||[]).forEach(d => { dayMap[d.date] = d.checks; });
-          let cells = Array.from({length:startWeekday}).map(() => `<div class="ring-empty"></div>`).join('');
-          for (let dd=1; dd<=numDays; dd++) {
-            const dateStr = `${yr}-${String(mo+1).padStart(2,'0')}-${String(dd).padStart(2,'0')}`;
-            const checks = dayMap[dateStr] || {};
-            const isToday = dd === now.getDate();
-            const future = dd > now.getDate();
-            const rings = HABIT_TYPE_ORDER.map((type, ti) => {
-              const r = 16 - ti*3.4;
-              const C = 2*Math.PI*r;
-              const hs = hDefs.filter(h => h.type===type);
-              const done = hs.filter(h => checks[h.name]).length;
-              const frac = hs.length ? done/hs.length : 0;
-              return `<circle cx="18" cy="18" r="${r.toFixed(2)}" fill="none" stroke="${TYPE_COLORS[type]}" stroke-opacity="0.13" stroke-width="2.6"/><circle cx="18" cy="18" r="${r.toFixed(2)}" fill="none" stroke="${TYPE_COLORS[type]}" stroke-width="2.6" stroke-linecap="round" stroke-dasharray="${(frac*C).toFixed(2)} ${C.toFixed(2)}"/>`;
-            }).join('');
-            cells += `<div class="ring-day${isToday?' ring-today':''}">
-              <svg viewBox="0 0 36 36" class="ring-svg${future?' ring-future':''}"><g transform="rotate(-90 18 18)">${rings}</g></svg>
-              <div class="ring-daynum">${dd}</div>
-            </div>`;
-          }
-          return cells;
-        })()}
-      </div>
-    </div>
-
     <!-- ── WEEK STRIP ──────────────────────────────── -->
     <div class="section-header">The Rest of the Story <em>(Week in Review)</em></div>
     <div class="week-strip">
@@ -1164,6 +1175,10 @@ function renderHome(data, meetings) {
           </div>` : ''}
       </div>
     </div>
+    <!-- ── BECOMING: MONTHLY RHYTHM (rings) — moved to bottom ─ -->
+    <div class="section-header">Becoming <em>(My Monthly Rhythm)</em></div>
+    <div class="rhythm-wrap">${monthlyRhythmInner(data)}</div>
+
   `;
 
   // Render ecosystem pie charts after DOM is ready
@@ -1286,7 +1301,7 @@ function renderEcosystem(eco, data, meetings) {
     </div>
 
     <div class="section-header">Notes &amp; Logs</div>
-    <div class="row-two">
+    <div class="${eco === 'Personal' ? 'row-three' : 'row-two'}">
       <div class="green-card">
         <div class="card-label">📝 Notes</div>
         ${noted.length === 0
@@ -1307,6 +1322,11 @@ function renderEcosystem(eco, data, meetings) {
               return `<div class="log-row"><span class="log-date">${ds}</span><span class="log-text">${t.task || 'Untitled'}</span></div>`;
             }).join('')}
       </div>
+      ${eco === 'Personal' ? `
+      <div class="green-card rhythm-compact">
+        <div class="card-label">🌱 Monthly Rhythm</div>
+        ${monthlyRhythmInner(data)}
+      </div>` : ''}
     </div>
   `;
 }
