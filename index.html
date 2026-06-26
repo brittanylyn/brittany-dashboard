@@ -226,6 +226,15 @@ body {
   margin-top: 12px;
   font-weight: 600;
 }
+.habit-status {
+  text-align: center;
+  font-size: 0.66rem;
+  margin-top: 6px;
+  min-height: 0.8em;
+  line-height: 1.3;
+}
+.habit-status.ok  { color: rgba(255,255,255,0.6); }
+.habit-status.err { color: var(--coral); font-weight: 700; }
 .habit-type-label {
   font-size: 0.58rem;
   font-weight: 700;
@@ -965,23 +974,31 @@ async function toggleHabit(name, rowEl) {
   const wasDone = dot.classList.contains('done');
   const value = !wasDone;
 
+  const statusEl = document.getElementById('habit-status');
+  const setStatus = (msg, ok) => { if (statusEl) { statusEl.textContent = msg || ''; statusEl.className = 'habit-status' + (ok ? ' ok' : msg ? ' err' : ''); } };
+
   habitBusy = true;
   setHabitDotState(dot, value);          // optimistic flip
   rowEl.classList.add('habit-saving');
+  setStatus('Saving…', true);
   try {
     const res = await fetch('/api/log-habit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ habit: name, value }),
     });
-    const out = await res.json();
-    if (!res.ok || out.error) throw new Error(out.error || `Error ${res.status}`);
+    // Parse defensively — a 404/HTML error page isn't JSON
+    let out = {};
+    const text = await res.text();
+    try { out = text ? JSON.parse(text) : {}; } catch (_) {}
+    if (!res.ok || out.error) throw new Error(out.error || `HTTP ${res.status}`);
     habitBusy = false;
     load();                              // refresh so the rings + daily score re-sync from Notion
   } catch (e) {
     setHabitDotState(dot, wasDone);      // revert on failure
     rowEl.classList.remove('habit-saving');
     habitBusy = false;
+    setStatus('Couldn’t save: ' + e.message, false);
     console.error('habit toggle failed:', e);
   }
 }
@@ -1078,6 +1095,7 @@ function renderHome(data, meetings) {
             }).join('')
         }
         ${hDefs.length>0 ? `<div class="habit-score">${habitsDoneToday} / ${hDefs.length} completed today</div>` : ''}
+        <div id="habit-status" class="habit-status"></div>
       </div>
 
       <!-- Resources + Reserves Alerts -->
