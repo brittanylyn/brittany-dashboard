@@ -651,6 +651,15 @@ body {
 }
 .pw-status.ok  { color: var(--green); font-weight: 700; }
 .pw-status.err { color: var(--coral); font-weight: 700; }
+.pw-calc {
+  text-align: center;
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: var(--green);
+  opacity: 0.75;
+  margin-top: 7px;
+}
+.pw-calc.err { color: var(--coral); opacity: 1; }
 
 /* ── LOADING ─────────────────────────────────────── */
 .loading {
@@ -1197,11 +1206,12 @@ function renderHome(data, meetings) {
               <input id="pw-rate" type="number" min="0" step="1" placeholder="Rate $/hr" />
             </div>
             <div id="pw-manual-wrap" style="display:none">
-              <input id="pw-manual" type="number" min="0" step="0.25" placeholder="Hours worked" />
+              <input id="pw-date" type="date" title="Date worked" />
               <div class="pw-two" style="margin-top:6px">
-                <input id="pw-date" type="date" title="Date worked" />
-                <input id="pw-time" type="time" title="Approx. time of day" />
+                <input id="pw-start" type="time" title="Start time" />
+                <input id="pw-end" type="time" title="End time" />
               </div>
+              <div id="pw-calc" class="pw-calc">Set start &amp; end time</div>
             </div>
             <input id="pw-notes" type="text" placeholder="Notes (optional)" />
           </div>
@@ -1427,15 +1437,34 @@ function mountPwTimer() {
   const resetBtn = document.getElementById('pw-reset');
   const logBtn   = document.getElementById('pw-log');
   const toggle   = document.getElementById('pw-toggle');
-  const manual   = document.getElementById('pw-manual');
   const manualWrap = document.getElementById('pw-manual-wrap');
   const dateInput  = document.getElementById('pw-date');
-  const timeInput  = document.getElementById('pw-time');
+  const startInput = document.getElementById('pw-start');
+  const endInput   = document.getElementById('pw-end');
+  const calcEl     = document.getElementById('pw-calc');
   const statusEl = document.getElementById('pw-status');
   let manualMode = false;
 
   // Default the manual date picker to today
   if (dateInput && !dateInput.value) dateInput.value = todayStr();
+
+  // Compute decimal hours from two "HH:MM" times (null if invalid / end ≤ start)
+  function pwHoursFromTimes(st, en) {
+    if (!st || !en) return null;
+    const [sh, sm] = st.split(':').map(Number);
+    const [eh, em] = en.split(':').map(Number);
+    const mins = (eh*60 + em) - (sh*60 + sm);
+    return mins > 0 ? Math.round(mins/60 * 100) / 100 : null;
+  }
+  function updateCalc() {
+    const st = startInput.value, en = endInput.value;
+    if (!st || !en) { calcEl.textContent = 'Set start & end time'; calcEl.classList.remove('err'); return; }
+    const h = pwHoursFromTimes(st, en);
+    if (h == null) { calcEl.textContent = 'End time must be after start'; calcEl.classList.add('err'); }
+    else { calcEl.textContent = `= ${h} ${h === 1 ? 'hour' : 'hours'}`; calcEl.classList.remove('err'); }
+  }
+  startInput.oninput = updateCalc;
+  endInput.oninput = updateCalc;
 
   function paint() {
     const s = pwLoad();
@@ -1491,8 +1520,9 @@ function mountPwTimer() {
     let hours, startTime = '', endTime = '';
     let logDate = new Date().toISOString().slice(0,10);
     if (manualMode) {
-      hours = parseFloat(manual.value);
-      startTime = pwFmt24to12(timeInput.value);   // approximate time of day → Start Time
+      hours = pwHoursFromTimes(startInput.value, endInput.value);   // auto-calculated from start/end
+      startTime = pwFmt24to12(startInput.value);
+      endTime = pwFmt24to12(endInput.value);
       if (dateInput.value) logDate = dateInput.value;
     } else {
       hours = Math.round((pwElapsedMs(s) / 3600000) * 100) / 100;
@@ -1501,7 +1531,11 @@ function mountPwTimer() {
     }
 
     if (!project) { statusEl.className = 'pw-status err'; statusEl.textContent = 'Add what you worked on.'; return; }
-    if (!hours || hours <= 0) { statusEl.className = 'pw-status err'; statusEl.textContent = 'No time to log yet.'; return; }
+    if (!hours || hours <= 0) {
+      statusEl.className = 'pw-status err';
+      statusEl.textContent = manualMode ? 'Enter a valid start and end time.' : 'No time to log yet.';
+      return;
+    }
 
     logBtn.disabled = true;
     statusEl.className = 'pw-status';
