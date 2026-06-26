@@ -189,6 +189,11 @@ body {
   border-bottom: 1px solid rgba(255,255,255,0.07);
 }
 .habit-row:last-of-type { border-bottom: none; }
+.habit-tap { cursor: pointer; transition: opacity .12s ease; }
+.habit-tap:hover { opacity: 0.78; }
+.habit-tap:hover .habit-dot { box-shadow: 0 0 0 3px rgba(255,255,255,0.12); }
+.habit-tap:active { opacity: 0.55; }
+.habit-saving { opacity: 0.5; pointer-events: none; }
 
 .habit-dot {
   width: 20px;
@@ -945,6 +950,42 @@ function route() {
 
 window.addEventListener('hashchange', route);
 
+/* ── HABIT CHECK-OFF (taps the dashboard → writes to Notion) ── */
+function setHabitDotState(dot, on) {
+  const color = dot.getAttribute('data-color') || '#efb001';
+  dot.classList.toggle('done', on);
+  dot.style.background = on ? color : '';
+}
+
+let habitBusy = false;
+async function toggleHabit(name, rowEl) {
+  if (habitBusy) return;                 // one tap at a time (reload will re-sync)
+  const dot = rowEl.querySelector('.habit-dot');
+  if (!dot) return;
+  const wasDone = dot.classList.contains('done');
+  const value = !wasDone;
+
+  habitBusy = true;
+  setHabitDotState(dot, value);          // optimistic flip
+  rowEl.classList.add('habit-saving');
+  try {
+    const res = await fetch('/api/log-habit', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ habit: name, value }),
+    });
+    const out = await res.json();
+    if (!res.ok || out.error) throw new Error(out.error || `Error ${res.status}`);
+    habitBusy = false;
+    load();                              // refresh so the rings + daily score re-sync from Notion
+  } catch (e) {
+    setHabitDotState(dot, wasDone);      // revert on failure
+    rowEl.classList.remove('habit-saving');
+    habitBusy = false;
+    console.error('habit toggle failed:', e);
+  }
+}
+
 function renderHome(data, meetings) {
   const { tasks, habitDefs, habitDays, inventory, finance, wishlist, timetrack } = data;
   const now = today();
@@ -1030,8 +1071,8 @@ function renderHome(data, meetings) {
               return `
                 <div class="habit-type-label" style="color:${TYPE_COLORS[type]}">${type}</div>
                 ${hs.map(h => `
-                  <div class="habit-row">
-                    <div class="habit-dot${isHabitDone(h.name)?' done':''}" style="border-color:${TYPE_COLORS[type]}${isHabitDone(h.name)?`;background:${TYPE_COLORS[type]}`:''}"></div>
+                  <div class="habit-row habit-tap" onclick="toggleHabit('${h.name.replace(/'/g,"\\'")}', this)">
+                    <div class="habit-dot${isHabitDone(h.name)?' done':''}" data-color="${TYPE_COLORS[type]}" style="border-color:${TYPE_COLORS[type]}${isHabitDone(h.name)?`;background:${TYPE_COLORS[type]}`:''}"></div>
                     <span class="habit-name">${h.name}</span>
                   </div>`).join('')}`;
             }).join('')
