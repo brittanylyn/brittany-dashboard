@@ -651,6 +651,56 @@ body {
   font-size: 1.1rem;
   font-style: italic;
 }
+/* ── ECOSYSTEM CARD → CLICKABLE ──────────────────── */
+.eco-card-link { cursor: pointer; transition: transform .12s ease, box-shadow .12s ease; position: relative; }
+.eco-card-link:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(4,48,0,0.14); }
+.eco-open-hint {
+  font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: var(--coral); opacity: 0; transition: opacity .12s ease; margin-top: 8px; text-align: center;
+}
+.eco-card-link:hover .eco-open-hint { opacity: 1; }
+
+/* ── INTERIOR PAGE ───────────────────────────────── */
+.back-link {
+  display: inline-block; cursor: pointer; font-size: 0.72rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.06em; color: var(--coral);
+  margin-bottom: 14px; user-select: none;
+}
+.back-link:hover { text-decoration: underline; }
+
+.stat-strip { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; margin-bottom: 6px; }
+.stat-pill {
+  background: var(--green); border-radius: 12px; padding: 14px 22px; text-align: center; min-width: 96px;
+}
+.stat-pill .stat-num { font-family: 'Playfair Display', serif; font-size: 1.5rem; font-weight: 900; color: var(--white); line-height: 1; }
+.stat-pill .stat-lbl { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--gold); margin-top: 6px; }
+
+.row-two { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+.task-group-label {
+  font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  color: rgba(239,176,1,0.7); margin: 14px 0 8px; padding-bottom: 6px;
+  border-bottom: 1px solid rgba(239,176,1,0.2);
+}
+.task-group-label:first-of-type { margin-top: 0; }
+.task-done .task-name { opacity: 0.55; text-decoration: line-through; }
+
+.tag-due { background: rgba(94,141,239,0.25); color: #aac3fb; }
+.tag-overdue { background: var(--coral); color: white; }
+.tag-assignee-me        { background: rgba(63,174,106,0.28); color: #8be0ac; }
+.tag-assignee-claude    { background: rgba(94,141,239,0.28); color: #aac3fb; }
+.tag-assignee-external  { background: rgba(226,77,73,0.28); color: #f3a6a4; }
+.tag-assignee-together  { background: rgba(176,124,240,0.28); color: #d9c2f7; }
+
+.note-row { padding: 9px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.note-row:last-child { border-bottom: none; }
+.note-row .note-src { font-size: 0.7rem; font-weight: 700; color: var(--gold); margin-bottom: 3px; }
+.note-row .note-body { color: rgba(255,255,255,0.85); font-size: 0.8rem; line-height: 1.45; }
+
+.log-row { display: flex; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px solid rgba(255,255,255,0.07); }
+.log-row:last-child { border-bottom: none; }
+.log-row .log-date { font-size: 0.62rem; font-weight: 700; color: rgba(239,176,1,0.7); white-space: nowrap; flex-shrink: 0; min-width: 58px; }
+.log-row .log-text { color: rgba(255,255,255,0.85); font-size: 0.8rem; line-height: 1.4; }
 </style>
 </head>
 <body>
@@ -769,7 +819,31 @@ function renderEcoChart(id, done, inProg, todo) {
   });
 }
 
+/* ── ROUTER ──────────────────────────────────────── */
+let APP = { data: null, meetings: [] };
+
+function slugify(s) { return s.replace(/[\s\/]+/g,'-').toLowerCase(); }
+function goEco(eco) { location.hash = '#/eco/' + slugify(eco); }
+
 function render(data, meetings) {
+  APP = { data, meetings };
+  route();
+}
+
+function route() {
+  if (!APP.data) return;
+  const m = (location.hash || '').match(/^#\/eco\/(.+)$/);
+  if (m) {
+    const eco = ECOSYSTEMS.find(e => slugify(e) === decodeURIComponent(m[1]));
+    if (eco) { renderEcosystem(eco, APP.data, APP.meetings); window.scrollTo(0, 0); return; }
+  }
+  renderHome(APP.data, APP.meetings);
+  window.scrollTo(0, 0);
+}
+
+window.addEventListener('hashchange', route);
+
+function renderHome(data, meetings) {
   const { tasks, habitDefs, habitDays, inventory, finance, wishlist, timetrack } = data;
   const now = today();
   const ts  = todayStr();
@@ -968,7 +1042,7 @@ function render(data, meetings) {
         const donePct = total ? Math.round(done/total*100) : 0;
         const id = 'eco-'+eco.replace(/[\s\/]+/g,'-').toLowerCase();
         return `
-          <div class="eco-card">
+          <div class="eco-card eco-card-link" onclick="goEco('${eco.replace(/'/g,"\\'")}')" title="Open ${eco}">
             <div class="eco-name">${eco}</div>
             <div class="eco-chart-wrap"><canvas id="${id}"></canvas></div>
             <div class="eco-legend">
@@ -976,6 +1050,7 @@ function render(data, meetings) {
               <div class="eco-leg-item"><div class="eco-leg-dot" style="background:#efb001"></div>${inProg} in progress</div>
               <div class="eco-leg-item"><div class="eco-leg-dot" style="background:#f094a3"></div>${todo} to do</div>
             </div>
+            <div class="eco-open-hint">View page →</div>
           </div>`;
       }).join('')}
     </div>
@@ -1103,6 +1178,137 @@ function render(data, meetings) {
     });
     mountPwTimer();
   });
+}
+
+/* ── INTERIOR ECOSYSTEM PAGE ─────────────────────── */
+const ECO_BLURBS = {
+  'Personal':      'Home, habits, health & finances — the foundation everything else runs on.',
+  'GOTR':          'Girls on the Run — wrapping mode, grant-heavy, time-sensitive.',
+  'Maroon':        'Building mode — getting the org and systems stood up.',
+  'Mellow Yellow': 'Maintenance mode — keep it steady and serving customers.',
+  'APC':           'At Peace Collective — vision mode, building toward what’s next.',
+  'Parker Wells':  'The business umbrella — client work, hours & income.',
+  'Job Search':    'Active and temporary — landing the next right role.',
+};
+
+function assigneeTag(a) {
+  if (!a) return '';
+  const k = a.toLowerCase();
+  const cls = k.includes('claude') ? 'claude'
+            : k.includes('external') ? 'external'
+            : (k.includes('together') || k.includes('us')) ? 'together'
+            : 'me';
+  return `<span class="tag tag-assignee-${cls}">${a}</span>`;
+}
+
+function dueTag(iso) {
+  if (!iso) return '';
+  const d = new Date(iso + 'T00:00:00');
+  const today0 = new Date(); today0.setHours(0,0,0,0);
+  const overdue = d < today0;
+  const label = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+  return `<span class="tag ${overdue ? 'tag-overdue' : 'tag-due'}">${overdue ? 'Overdue · ' : 'Due '}${label}</span>`;
+}
+
+function taskCard(t) {
+  const isDone = t.status === 'Done';
+  return `
+    <div class="task-row${isDone ? ' task-done' : ''}">
+      <div class="task-name">${t.task || 'Untitled'}${t.blocked ? ' 🚫' : ''}</div>
+      <div class="tags">
+        ${priorityTag(t.priority)}
+        ${dueTag(t.dueDate)}
+        ${t.timeEst ? `<span class="tag tag-time">${t.timeEst}m</span>` : ''}
+        ${assigneeTag(t.assignee)}
+        ${energyTag(t.energyLevel)}
+        ${t.frequency ? `<span class="tag tag-low">${t.frequency}</span>` : ''}
+      </div>
+    </div>`;
+}
+
+function renderEcosystem(eco, data, meetings) {
+  const { tasks } = data;
+  const et = (tasks || []).filter(t => t.ecosystem === eco);
+
+  const inProg = et.filter(t => t.status === 'In Progress');
+  const todo   = et.filter(t => !['Done','In Progress'].includes(t.status));
+  const done   = et.filter(t => t.status === 'Done');
+
+  // Sort active tasks: due date soonest first, then by priority weight
+  const pw = p => p && p.includes('Urgent') ? 0 : p === 'High' ? 1 : p === 'Medium' ? 2 : 3;
+  const byDuePri = (a, b) => {
+    if (a.dueDate && b.dueDate) return a.dueDate.localeCompare(b.dueDate);
+    if (a.dueDate) return -1;
+    if (b.dueDate) return 1;
+    return pw(a.priority) - pw(b.priority);
+  };
+  inProg.sort(byDuePri);
+  todo.sort(byDuePri);
+
+  // Notes: any task in this ecosystem carrying a note
+  const noted = et.filter(t => t.notes && t.notes.trim());
+
+  // Activity log: completed tasks, most recent first
+  const logged = done
+    .filter(t => t.completedDate)
+    .sort((a, b) => b.completedDate.localeCompare(a.completedDate))
+    .slice(0, 15);
+
+  const totalEst = et.filter(t => t.status !== 'Done').reduce((s,t) => s + (t.timeEst || 0), 0);
+  const estLabel = totalEst >= 60 ? `${(totalEst/60).toFixed(1)}h` : `${totalEst}m`;
+
+  const groupBlock = (label, arr) => arr.length
+    ? `<div class="task-group-label">${label} (${arr.length})</div>${arr.map(taskCard).join('')}`
+    : '';
+
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="back-link" onclick="location.hash=''">← Command Center</div>
+    <h1 class="dashboard-title">${eco}</h1>
+    <p class="dashboard-date">${ECO_BLURBS[eco] || ''}</p>
+
+    <div class="stat-strip">
+      <div class="stat-pill"><div class="stat-num">${et.length}</div><div class="stat-lbl">Total tasks</div></div>
+      <div class="stat-pill"><div class="stat-num">${inProg.length}</div><div class="stat-lbl">In progress</div></div>
+      <div class="stat-pill"><div class="stat-num">${todo.length}</div><div class="stat-lbl">To do</div></div>
+      <div class="stat-pill"><div class="stat-num">${done.length}</div><div class="stat-lbl">Done</div></div>
+      <div class="stat-pill"><div class="stat-num">${estLabel}</div><div class="stat-lbl">Est. remaining</div></div>
+    </div>
+
+    <div class="section-header">Tasks</div>
+    <div class="green-card">
+      <div class="card-label">📋 ${eco} Tasks</div>
+      ${et.length === 0
+        ? `<div class="empty-light">No tasks tagged to ${eco} yet ✨</div>`
+        : `${groupBlock('In Progress', inProg)}
+           ${groupBlock('To Do', todo)}
+           ${groupBlock('Done', done)}`}
+    </div>
+
+    <div class="section-header">Notes &amp; Logs</div>
+    <div class="row-two">
+      <div class="green-card">
+        <div class="card-label">📝 Notes</div>
+        ${noted.length === 0
+          ? `<div class="empty-light">No notes yet. Add a note to any ${eco} task in Notion and it'll show here.</div>`
+          : noted.map(t => `
+              <div class="note-row">
+                <div class="note-src">${t.task || 'Untitled'}</div>
+                <div class="note-body">${t.notes}</div>
+              </div>`).join('')}
+      </div>
+      <div class="green-card">
+        <div class="card-label">✓ Activity Log</div>
+        ${logged.length === 0
+          ? `<div class="empty-light">Completed tasks will appear here as you check them off.</div>`
+          : logged.map(t => {
+              const d = new Date(t.completedDate + 'T00:00:00');
+              const ds = d.toLocaleDateString('en-US', { month:'short', day:'numeric' });
+              return `<div class="log-row"><span class="log-date">${ds}</span><span class="log-text">${t.task || 'Untitled'}</span></div>`;
+            }).join('')}
+      </div>
+    </div>
+  `;
 }
 
 /* ── PARKER WELLS TIMER ───────────────────────────── */
