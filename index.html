@@ -1635,9 +1635,12 @@ async function load() {
   try {
     // Fetch Notion data and Google Calendar in parallel
     // Calendar gracefully returns [] if env vars aren't set yet
+    // Cache-bust so a refresh right after logging a habit/time shows live data
+    // (the API sets a 60s CDN cache; a unique query param bypasses it).
+    const bust = '?t=' + Date.now();
     const [notionRes, calRes] = await Promise.all([
-      fetch('/api/notion'),
-      fetch('/api/calendar').catch(() => ({ ok: true, json: async () => ({ meetings: [] }) })),
+      fetch('/api/notion' + bust),
+      fetch('/api/calendar' + bust).catch(() => ({ ok: true, json: async () => ({ meetings: [] }) })),
     ]);
 
     if (!notionRes.ok) throw new Error(`Notion API error ${notionRes.status}`);
