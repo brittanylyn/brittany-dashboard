@@ -711,6 +711,50 @@ body {
 .log-row:last-child { border-bottom: none; }
 .log-row .log-date { font-size: 0.62rem; font-weight: 700; color: rgba(239,176,1,0.7); white-space: nowrap; flex-shrink: 0; min-width: 58px; }
 .log-row .log-text { color: rgba(255,255,255,0.85); font-size: 0.8rem; line-height: 1.4; }
+/* ════════════════════════════════════════════════════
+   MOBILE / PHONE LAYOUT  (desktop unchanged above)
+   Activates on screens ≤ 680px wide. Purely additive.
+   ════════════════════════════════════════════════════ */
+@media (max-width: 680px) {
+  html { font-size: 100%; }                 /* desktop is bumped to 115%; ease back on small screens */
+  body { min-width: 0; padding: 16px 13px 40px; }
+
+  .dashboard-title { font-size: 1.4rem; letter-spacing: 0.03em; }
+  .dashboard-date  { font-size: 0.78rem; margin-bottom: 18px; }
+  .section-header  { font-size: 1.02rem; margin: 24px 0 12px; }
+  .section-header em { font-size: 0.82rem; }
+
+  /* Stack every multi-column layout into one column */
+  .row-three, .row-two, .provision-grid { grid-template-columns: 1fr; gap: 14px; }
+
+  /* Ecosystem cards: two-up grid, always show the "View page →" hint (no hover on touch) */
+  .eco-grid { grid-template-columns: 1fr 1fr; gap: 12px; }
+  .eco-card-link .eco-open-hint { opacity: 1; }
+
+  .green-card { padding: 20px; min-height: 0; }
+  .rhythm-wrap { padding: 16px 14px 18px; margin-bottom: 18px; }
+
+  /* Habit rings: keep the 7-day calendar but let the rings scale to fit */
+  .ring-svg { width: 100%; height: auto; }
+  .ring-cal { gap: 4px; }
+  .ring-daynum { font-size: 0.5rem; }
+  .rhythm-legend { gap: 10px; }
+  .rl-item { font-size: 0.6rem; }
+
+  /* Week in Review: turn the 7-across grid into a swipeable horizontal strip */
+  .week-strip { display: flex; overflow-x: auto; gap: 10px; -webkit-overflow-scrolling: touch; padding-bottom: 4px; }
+  .day-card { flex: 0 0 auto; min-width: 78px; min-height: 110px; }
+
+  /* Interior page: bigger tap targets, tighter stat strip */
+  .back-link { font-size: 0.82rem; padding: 6px 0; }
+  .stat-strip { gap: 8px; }
+  .stat-pill { padding: 12px 16px; min-width: 78px; }
+  .stat-pill .stat-num { font-size: 1.3rem; }
+
+  /* Parker Wells timer controls: easier to press */
+  .pw-clock { font-size: 1.6rem; }
+  .pw-btn { padding: 11px 14px; }
+}
 </style>
 </head>
 <body>
