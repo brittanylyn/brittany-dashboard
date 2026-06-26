@@ -3,9 +3,6 @@ const https = require('https');
 const NOTION_VERSION = '2022-06-28';
 const TIMETRACK_DB = '73e595478c19447cb2c8e7ad1cf210a2';
 
-// Allowed Client select options in Notion (must match the DB schema exactly)
-const CLIENTS = ['Maroon COS', 'GOTR', 'Other'];
-
 function notionRequest(path, token, payload) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(payload);
@@ -78,8 +75,8 @@ module.exports = async (req, res) => {
       'Invoice Status': { select: { name: 'Uninvoiced' } },
     };
 
-    if (b.client && CLIENTS.includes(b.client)) {
-      properties['Client'] = { select: { name: b.client } };
+    if (b.client && b.client.toString().trim()) {
+      properties['Client'] = { select: { name: b.client.toString().trim() } };
     }
     if (b.rate != null && b.rate !== '' && isFinite(Number(b.rate))) {
       properties['Rate'] = { number: Number(b.rate) };

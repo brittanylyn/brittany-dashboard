@@ -39,6 +39,31 @@ function queryDB(dbId, token, payload = {}) {
   });
 }
 
+// Retrieve a database's schema (GET) — used to read live select options (e.g. Client list)
+function getDB(dbId, token) {
+  return new Promise((resolve, reject) => {
+    const options = {
+      hostname: 'api.notion.com',
+      path: `/v1/databases/${dbId}`,
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Notion-Version': NOTION_VERSION,
+      },
+    };
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', c => data += c);
+      res.on('end', () => {
+        try { resolve(JSON.parse(data)); }
+        catch (e) { reject(e); }
+      });
+    });
+    req.on('error', reject);
+    req.end();
+  });
+}
+
 const txt  = p => p?.title?.[0]?.plain_text || p?.rich_text?.[0]?.plain_text || '';
 const sel  = p => p?.select?.name || null;
 const num  = p => p?.number ?? null;
@@ -61,7 +86,7 @@ module.exports = async (req, res) => {
     const TZ = 'America/Chicago';
     const dayInTZ = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ }); // YYYY-MM-DD
     const monthStart = dayInTZ(new Date()).slice(0, 8) + '01';
-    const [tasksRes, habitsRes, invRes, finRes, wishRes, timeRes] = await Promise.all([
+    const [tasksRes, habitsRes, invRes, finRes, wishRes, timeRes, ttMetaRes] = await Promise.all([
       queryDB(DB.tasks,     token),
       queryDB(DB.habits,    token, {
         filter: { timestamp: 'created_time', created_time: { on_or_after: monthStart } },
@@ -71,7 +96,11 @@ module.exports = async (req, res) => {
       queryDB(DB.finance,   token),
       queryDB(DB.wishlist,  token),
       queryDB(DB.timetrack, token),
+      getDB(DB.timetrack,   token),
     ]);
+
+    // Live Client dropdown options, read straight from the Time Tracker's "Client" select field
+    const clients = ((ttMetaRes?.properties?.['Client']?.select?.options) || []).map(o => o.name);
 
     const tasks = (tasksRes.results || []).map(p => ({
       id:            p.id,
@@ -155,7 +184,7 @@ module.exports = async (req, res) => {
       notes:         txt(p.properties['Notes']),
     }));
 
-    res.json({ tasks, habitDefs, habitDays, inventory, finance, wishlist, timetrack, ts: new Date().toISOString() });
+    res.json({ tasks, habitDefs, habitDays, inventory, finance, wishlist, timetrack, clients, ts: new Date().toISOString() });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });

@@ -1199,9 +1199,6 @@ function renderHome(data, meetings) {
             <div class="pw-two">
               <select id="pw-client">
                 <option value="">Client…</option>
-                <option value="Maroon COS">Maroon COS</option>
-                <option value="GOTR">GOTR</option>
-                <option value="Other">Other</option>
               </select>
               <input id="pw-rate" type="number" min="0" step="1" placeholder="Rate $/hr" />
             </div>
@@ -1444,6 +1441,15 @@ function mountPwTimer() {
   const calcEl     = document.getElementById('pw-calc');
   const statusEl = document.getElementById('pw-status');
   let manualMode = false;
+
+  // Populate the Client dropdown from Notion's live "Client" select options
+  const clientSel = document.getElementById('pw-client');
+  const clientOpts = (APP.data && APP.data.clients) || [];
+  if (clientSel && clientOpts.length) {
+    const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');
+    clientSel.innerHTML = '<option value="">Client…</option>' +
+      clientOpts.map(c => `<option value="${esc(c)}">${esc(c)}</option>`).join('');
+  }
 
   // Default the manual date picker to today
   if (dateInput && !dateInput.value) dateInput.value = todayStr();
