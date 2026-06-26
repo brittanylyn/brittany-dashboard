@@ -1196,7 +1196,13 @@ function renderHome(data, meetings) {
               </select>
               <input id="pw-rate" type="number" min="0" step="1" placeholder="Rate $/hr" />
             </div>
-            <input id="pw-manual" type="number" min="0" step="0.25" placeholder="Hours (manual)" style="display:none" />
+            <div id="pw-manual-wrap" style="display:none">
+              <input id="pw-manual" type="number" min="0" step="0.25" placeholder="Hours worked" />
+              <div class="pw-two" style="margin-top:6px">
+                <input id="pw-date" type="date" title="Date worked" />
+                <input id="pw-time" type="time" title="Approx. time of day" />
+              </div>
+            </div>
             <input id="pw-notes" type="text" placeholder="Notes (optional)" />
           </div>
           <button id="pw-log" class="pw-log">Log to Notion</button>
@@ -1404,6 +1410,15 @@ function pwNowClock() {
   h = h % 12 || 12;
   return m === 0 ? `${h}${ap}` : `${h}:${String(m).padStart(2,'0')}${ap}`;
 }
+// Convert a 24h "HH:MM" (from <input type=time>) → friendly "2pm" / "2:30pm"
+function pwFmt24to12(t) {
+  if (!t) return '';
+  const [H, M] = t.split(':').map(Number);
+  if (isNaN(H)) return '';
+  const ap = H >= 12 ? 'pm' : 'am';
+  const h = H % 12 || 12;
+  return M ? `${h}:${String(M).padStart(2,'0')}${ap}` : `${h}${ap}`;
+}
 
 function mountPwTimer() {
   const clock  = document.getElementById('pw-clock');
@@ -1413,8 +1428,14 @@ function mountPwTimer() {
   const logBtn   = document.getElementById('pw-log');
   const toggle   = document.getElementById('pw-toggle');
   const manual   = document.getElementById('pw-manual');
+  const manualWrap = document.getElementById('pw-manual-wrap');
+  const dateInput  = document.getElementById('pw-date');
+  const timeInput  = document.getElementById('pw-time');
   const statusEl = document.getElementById('pw-status');
   let manualMode = false;
+
+  // Default the manual date picker to today
+  if (dateInput && !dateInput.value) dateInput.value = todayStr();
 
   function paint() {
     const s = pwLoad();
@@ -1454,7 +1475,7 @@ function mountPwTimer() {
 
   toggle.onclick = () => {
     manualMode = !manualMode;
-    manual.style.display = manualMode ? 'block' : 'none';
+    manualWrap.style.display = manualMode ? 'block' : 'none';
     clock.style.display = manualMode ? 'none' : 'block';
     startBtn.parentElement.style.display = manualMode ? 'none' : 'flex';
     toggle.textContent = manualMode ? 'Use the timer instead' : 'Enter hours manually instead';
@@ -1467,9 +1488,12 @@ function mountPwTimer() {
     const notes   = document.getElementById('pw-notes').value.trim();
     const s = pwLoad();
 
-    let hours, startTime, endTime;
+    let hours, startTime = '', endTime = '';
+    let logDate = new Date().toISOString().slice(0,10);
     if (manualMode) {
       hours = parseFloat(manual.value);
+      startTime = pwFmt24to12(timeInput.value);   // approximate time of day → Start Time
+      if (dateInput.value) logDate = dateInput.value;
     } else {
       hours = Math.round((pwElapsedMs(s) / 3600000) * 100) / 100;
       startTime = s.startClock || '';
@@ -1487,7 +1511,7 @@ function mountPwTimer() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ project, client, rate, notes, hoursWorked: hours, startTime, endTime,
-          date: new Date().toISOString().slice(0,10) }),
+          date: logDate }),
       });
       const out = await res.json();
       if (!res.ok || out.error) throw new Error(out.error || `Error ${res.status}`);
