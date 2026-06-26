@@ -555,6 +555,93 @@ body {
   color: var(--green);
 }
 
+/* Time tracker timer */
+.pw-timer {
+  margin-bottom: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(4,48,0,0.18);
+}
+.pw-clock {
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  font-size: 1.9rem;
+  color: var(--green);
+  text-align: center;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.pw-clock.running { color: var(--coral); }
+.pw-btns {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  margin: 10px 0 4px;
+}
+.pw-btn {
+  flex: 1;
+  border: none;
+  border-radius: 8px;
+  padding: 7px 4px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--green);
+  color: var(--cream);
+  transition: opacity 0.15s ease;
+}
+.pw-btn:hover { opacity: 0.85; }
+.pw-btn.ghost {
+  background: rgba(4,48,0,0.12);
+  color: var(--green);
+}
+.pw-btn:disabled { opacity: 0.4; cursor: default; }
+.pw-fields { display: grid; gap: 6px; margin-top: 8px; }
+.pw-fields input, .pw-fields select {
+  width: 100%;
+  box-sizing: border-box;
+  border: 1px solid rgba(4,48,0,0.25);
+  border-radius: 7px;
+  padding: 6px 8px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  color: var(--green);
+  background: var(--cream);
+}
+.pw-fields input::placeholder { color: rgba(4,48,0,0.45); }
+.pw-two { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.pw-log {
+  width: 100%;
+  margin-top: 8px;
+  border: none;
+  border-radius: 8px;
+  padding: 9px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  background: var(--green);
+  color: var(--gold);
+}
+.pw-log:disabled { opacity: 0.5; cursor: default; }
+.pw-toggle {
+  display: block;
+  text-align: center;
+  font-size: 0.64rem;
+  color: rgba(4,48,0,0.6);
+  margin-top: 8px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.pw-status {
+  text-align: center;
+  font-size: 0.66rem;
+  margin-top: 6px;
+  min-height: 0.8em;
+}
+.pw-status.ok  { color: var(--green); font-weight: 700; }
+.pw-status.err { color: var(--coral); font-weight: 700; }
+
 /* ── LOADING ─────────────────────────────────────── */
 .loading {
   text-align: center;
@@ -961,6 +1048,32 @@ function render(data, meetings) {
       <!-- Parker Wells Time Tracker -->
       <div class="provision-card gold">
         <div class="provision-title">⏱️ Parker Wells Time Tracker</div>
+
+        <div class="pw-timer">
+          <div id="pw-clock" class="pw-clock">00:00:00</div>
+          <div class="pw-btns">
+            <button id="pw-start" class="pw-btn">▶ Start</button>
+            <button id="pw-reset" class="pw-btn ghost">Reset</button>
+          </div>
+          <div class="pw-fields">
+            <input id="pw-project" type="text" placeholder="What are you working on?" />
+            <div class="pw-two">
+              <select id="pw-client">
+                <option value="">Client…</option>
+                <option value="Maroon COS">Maroon COS</option>
+                <option value="GOTR">GOTR</option>
+                <option value="Other">Other</option>
+              </select>
+              <input id="pw-rate" type="number" min="0" step="1" placeholder="Rate $/hr" />
+            </div>
+            <input id="pw-manual" type="number" min="0" step="0.25" placeholder="Hours (manual)" style="display:none" />
+            <input id="pw-notes" type="text" placeholder="Notes (optional)" />
+          </div>
+          <button id="pw-log" class="pw-log">Log to Notion</button>
+          <span id="pw-toggle" class="pw-toggle">Enter hours manually instead</span>
+          <div id="pw-status" class="pw-status"></div>
+        </div>
+
         ${thisMonth.length===0
           ? `<div class="empty-dark">No time logged this month</div>`
           : thisMonth.slice(0,5).map(t => `
@@ -988,7 +1101,141 @@ function render(data, meetings) {
       const id = 'eco-'+eco.replace(/[\s\/]+/g,'-').toLowerCase();
       renderEcoChart(id, done, inProg, todo);
     });
+    mountPwTimer();
   });
+}
+
+/* ── PARKER WELLS TIMER ───────────────────────────── */
+const PW_KEY = 'pwTimerState';
+let pwTick = null;
+
+function pwLoad() {
+  try { return JSON.parse(localStorage.getItem(PW_KEY)) || {}; }
+  catch { return {}; }
+}
+function pwSave(s) {
+  try { localStorage.setItem(PW_KEY, JSON.stringify(s)); } catch {}
+}
+function pwElapsedMs(s) {
+  const acc = s.accumulatedMs || 0;
+  return s.running && s.startedAt ? acc + (Date.now() - s.startedAt) : acc;
+}
+function pwFmtClock(ms) {
+  const tot = Math.floor(ms / 1000);
+  const h = String(Math.floor(tot / 3600)).padStart(2, '0');
+  const m = String(Math.floor((tot % 3600) / 60)).padStart(2, '0');
+  const s = String(tot % 60).padStart(2, '0');
+  return `${h}:${m}:${s}`;
+}
+function pwNowClock() {
+  const d = new Date();
+  let h = d.getHours(); const m = d.getMinutes();
+  const ap = h >= 12 ? 'pm' : 'am';
+  h = h % 12 || 12;
+  return m === 0 ? `${h}${ap}` : `${h}:${String(m).padStart(2,'0')}${ap}`;
+}
+
+function mountPwTimer() {
+  const clock  = document.getElementById('pw-clock');
+  if (!clock) return;
+  const startBtn = document.getElementById('pw-start');
+  const resetBtn = document.getElementById('pw-reset');
+  const logBtn   = document.getElementById('pw-log');
+  const toggle   = document.getElementById('pw-toggle');
+  const manual   = document.getElementById('pw-manual');
+  const statusEl = document.getElementById('pw-status');
+  let manualMode = false;
+
+  function paint() {
+    const s = pwLoad();
+    clock.textContent = pwFmtClock(pwElapsedMs(s));
+    clock.classList.toggle('running', !!s.running);
+    startBtn.textContent = s.running ? '⏸ Pause' : '▶ Start';
+  }
+  function startTick() {
+    if (pwTick) clearInterval(pwTick);
+    pwTick = setInterval(paint, 1000);
+  }
+
+  startBtn.onclick = () => {
+    const s = pwLoad();
+    if (s.running) {
+      // pause: bank elapsed
+      s.accumulatedMs = pwElapsedMs(s);
+      s.running = false;
+      s.startedAt = null;
+      if (pwTick) { clearInterval(pwTick); pwTick = null; }
+    } else {
+      if (!s.startClock && !(s.accumulatedMs > 0)) s.startClock = pwNowClock();
+      s.running = true;
+      s.startedAt = Date.now();
+      startTick();
+    }
+    pwSave(s);
+    paint();
+  };
+
+  resetBtn.onclick = () => {
+    if (pwTick) { clearInterval(pwTick); pwTick = null; }
+    pwSave({});
+    statusEl.textContent = '';
+    paint();
+  };
+
+  toggle.onclick = () => {
+    manualMode = !manualMode;
+    manual.style.display = manualMode ? 'block' : 'none';
+    clock.style.display = manualMode ? 'none' : 'block';
+    startBtn.parentElement.style.display = manualMode ? 'none' : 'flex';
+    toggle.textContent = manualMode ? 'Use the timer instead' : 'Enter hours manually instead';
+  };
+
+  logBtn.onclick = async () => {
+    const project = document.getElementById('pw-project').value.trim();
+    const client  = document.getElementById('pw-client').value;
+    const rate    = document.getElementById('pw-rate').value;
+    const notes   = document.getElementById('pw-notes').value.trim();
+    const s = pwLoad();
+
+    let hours, startTime, endTime;
+    if (manualMode) {
+      hours = parseFloat(manual.value);
+    } else {
+      hours = Math.round((pwElapsedMs(s) / 3600000) * 100) / 100;
+      startTime = s.startClock || '';
+      endTime = pwNowClock();
+    }
+
+    if (!project) { statusEl.className = 'pw-status err'; statusEl.textContent = 'Add what you worked on.'; return; }
+    if (!hours || hours <= 0) { statusEl.className = 'pw-status err'; statusEl.textContent = 'No time to log yet.'; return; }
+
+    logBtn.disabled = true;
+    statusEl.className = 'pw-status';
+    statusEl.textContent = 'Saving…';
+    try {
+      const res = await fetch('/api/log-time', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ project, client, rate, notes, hoursWorked: hours, startTime, endTime,
+          date: new Date().toISOString().slice(0,10) }),
+      });
+      const out = await res.json();
+      if (!res.ok || out.error) throw new Error(out.error || `Error ${res.status}`);
+      if (pwTick) { clearInterval(pwTick); pwTick = null; }
+      pwSave({});
+      statusEl.className = 'pw-status ok';
+      statusEl.textContent = `Logged ${hours}h ✓`;
+      setTimeout(load, 1200);
+    } catch (e) {
+      statusEl.className = 'pw-status err';
+      statusEl.textContent = e.message;
+      logBtn.disabled = false;
+    }
+  };
+
+  // restore on mount
+  paint();
+  if (pwLoad().running) startTick();
 }
 
 async function load() {

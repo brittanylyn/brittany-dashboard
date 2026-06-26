@@ -58,13 +58,14 @@ module.exports = async (req, res) => {
   if (!token) return res.status(500).json({ error: 'NOTION_TOKEN not set' });
 
   try {
-    const mStart = new Date();
-    const monthStart = `${mStart.getUTCFullYear()}-${String(mStart.getUTCMonth() + 1).padStart(2, '0')}-01`;
+    const TZ = 'America/Chicago';
+    const dayInTZ = (iso) => new Date(iso).toLocaleDateString('en-CA', { timeZone: TZ }); // YYYY-MM-DD
+    const monthStart = dayInTZ(new Date()).slice(0, 8) + '01';
     const [tasksRes, habitsRes, invRes, finRes, wishRes, timeRes] = await Promise.all([
       queryDB(DB.tasks,     token),
       queryDB(DB.habits,    token, {
-        filter: { property: 'Date', date: { on_or_after: monthStart } },
-        sorts:  [{ property: 'Date', direction: 'ascending' }],
+        filter: { timestamp: 'created_time', created_time: { on_or_after: monthStart } },
+        sorts:  [{ timestamp: 'created_time', direction: 'ascending' }],
       }),
       queryDB(DB.inventory, token),
       queryDB(DB.finance,   token),
@@ -104,7 +105,8 @@ module.exports = async (req, res) => {
     const habitDays = (habitsRes.results || []).map(p => {
       const checks = {};
       for (const def of habitDefs) checks[def.name] = chk(p.properties[def.name]);
-      return { date: date(p.properties['Date']), checks };
+      const day = date(p.properties['Date']) || (p.created_time ? dayInTZ(p.created_time) : null);
+      return { date: day, checks };
     }).filter(d => d.date);
 
     const inventory = (invRes.results || []).map(p => ({
